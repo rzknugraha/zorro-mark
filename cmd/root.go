@@ -84,7 +84,7 @@ func initConfig() {
 		viper.SetConfigFile(cfgFile)
 	} else {
 		viper.AddConfigPath(".")
-		viper.SetConfigName(".go-rest-starter")
+		viper.SetConfigName(".zorro-mark")
 		viper.SetConfigType("yaml")
 	}
 
