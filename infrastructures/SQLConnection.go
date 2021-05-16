@@ -1,94 +1,71 @@
 package infrastructures
 
 import (
-	"database/sql"
 	"os"
 
-	_ "github.com/go-sql-driver/mysql" // mysql driver
+	_ "github.com/go-sql-driver/mysql"
+	dbr "github.com/gocraft/dbr/v2"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
 // ISQLConnection is
 type ISQLConnection interface {
-	GetPlayerWriteDb() *sql.DB
-	GetPlayerReadDb() *sql.DB
-	CloseConnection()
+	EsignRead() *dbr.Session
+	EsignWrite() *dbr.Session
 }
 
 // SQLConnection define sql connection.
 type SQLConnection struct{}
 
 var (
-	dbPlayerRead, dbPlayerWrite *sql.DB
-	err                         error
+	dbEsignRead, dbEsignWrite *dbr.Connection
+	err                       error
 )
 
-func createDbConnection(descriptor string, maxIdle, maxOpen int, dbName string) *sql.DB {
-	conn, err := sql.Open("mysql", descriptor)
+// Connection open a new database connection
+func Connection(db, descriptor string, maxIdle, maxConns int) *dbr.Connection {
+	conn, err := dbr.Open(db, descriptor, nil)
 	if err != nil {
 		log.WithFields(log.Fields{
-			"action": "connection for mysql",
-			"event":  "mysql_error_connection",
+			"action": "connection for " + db,
+			"event":  db + "_error_connection",
 		}).Error(err)
 		os.Exit(0)
 	}
 
+	conn.SetMaxOpenConns(maxConns)
 	conn.SetMaxIdleConns(maxIdle)
-	conn.SetMaxOpenConns(maxOpen)
+
 	return conn
 }
 
-//GetPlayerWriteDb used for connect to write database
-func (s *SQLConnection) GetPlayerWriteDb() *sql.DB {
-	if dbPlayerWrite == nil {
-		dbPlayerWrite = createDbConnection(
-			viper.GetString("database.player.write"),
-			viper.GetInt("database.player.max_idle"),
-			viper.GetInt("database.player.max_cons"),
-			"PlayerWriteDB")
+// EsignRead create a new bareksa_marketdata session
+func (s *SQLConnection) EsignRead() *dbr.Session {
+	if dbEsignRead == nil {
+		dbEsignRead = Connection(
+			viper.GetString("database.client.driver"),
+			viper.GetString("database.client.read"),
+			viper.GetInt("database.client.max_idle"),
+			viper.GetInt("database.client.max_cons"),
+		)
 	}
-	if dbPlayerWrite.Ping() != nil {
-		dbPlayerWrite = createDbConnection(
-			viper.GetString("database.player.write"),
-			viper.GetInt("database.player.max_idle"),
-			viper.GetInt("database.player.max_cons"),
-			"PlayerWriteDB")
-	}
-	return dbPlayerWrite
+
+	sess := dbEsignRead.NewSession(nil)
+	return sess
 }
 
-//GetPlayerReadDb used for connect to read database
-func (s *SQLConnection) GetPlayerReadDb() *sql.DB {
-	if dbPlayerRead == nil {
-		dbPlayerRead = createDbConnection(
-			viper.GetString("database.player.read"),
-			viper.GetInt("database.player.max_idle"),
-			viper.GetInt("database.player.max_cons"),
-			"PlayerReadDB")
-	}
-	if dbPlayerRead.Ping() != nil {
-		dbPlayerRead = createDbConnection(
-			viper.GetString("database.player.read"),
-			viper.GetInt("database.player.max_idle"),
-			viper.GetInt("database.player.max_cons"),
-			"PlayerReadDB")
+// EsignWrite create a new bareksa_marketdata session
+func (s *SQLConnection) EsignWrite() *dbr.Session {
+	if dbEsignWrite == nil {
+		dbEsignWrite = Connection(
+			viper.GetString("database.client.driver"),
+			viper.GetString("database.client.write"),
+			viper.GetInt("database.client.max_idle"),
+			viper.GetInt("database.client.max_cons"),
+		)
 	}
 
-	return dbPlayerRead
-}
-
-// CloseConnection used for close database connection
-func (s *SQLConnection) CloseConnection() {
-
-	if dbPlayerRead != nil {
-		err = dbPlayerRead.Close()
-	}
-
-	if dbPlayerWrite != nil {
-		err = dbPlayerWrite.Close()
-	}
-	if err != nil {
-		log.Errorf("db Close Connection Error: %s", err)
-	}
+	sess := dbEsignWrite.NewSession(nil)
+	return sess
 }

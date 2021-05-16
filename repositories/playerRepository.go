@@ -4,9 +4,9 @@ import (
 
 	//"github.com/afex/hystrix-go/hystrix"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/rzknugraha/zorro-mark/infrastructures"
 	"github.com/rzknugraha/zorro-mark/models"
+	log "github.com/sirupsen/logrus"
 )
 
 // IPlayerRepository is
@@ -22,7 +22,7 @@ type PlayerRepository struct {
 // StorePlayer store agent type data to database
 func (r *PlayerRepository) StorePlayer(data models.Player) (models.Player, error) {
 	//err := hystrix.Do("StorePlayer", func() error {
-	db := r.DB.GetPlayerWriteDb()
+	db := r.DB.EsignWrite()
 	defer db.Close()
 	stmt, err := db.Prepare(`
 		INSERT INTO players(
