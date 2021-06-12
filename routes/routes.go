@@ -14,6 +14,7 @@ func (r *Route) Init() *mux.Router {
 	// Initialize controller //
 	healthCheckController := controllers.InitHealthCheckController()
 	playerController := controllers.InitPlayerController()
+	userController := controllers.InitUserController()
 
 	// Initialize router //
 	router := mux.NewRouter().StrictSlash(false)
@@ -21,6 +22,7 @@ func (r *Route) Init() *mux.Router {
 
 	v1.HandleFunc("/healthcheck", healthCheckController.HealthCheck).Methods("GET")
 	v1.HandleFunc("/player", playerController.StorePlayer).Methods("POST")
+	v1.HandleFunc("/login", userController.Login).Methods("POST")
 
 	return v1
 }

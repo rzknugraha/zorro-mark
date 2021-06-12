@@ -17,6 +17,8 @@ type IUserRepository interface {
 	GetUserByIDDPR(IDDpr int) (user models.User, err error)
 	StoreUser(user models.User) (count int64, err error)
 	UpdateUserByID(id int, user models.User) (err error)
+	Login(l models.Login) (auth bool, user models.User, err error)
+	GetUserByNIPstore(nip string) (user models.User, err error)
 }
 
 // UserRepository is
@@ -109,5 +111,52 @@ func (r *UserRepository) UpdateUserByID(id int, user models.User) (err error) {
 		return errors.New("No rows affected")
 	}
 
+	return
+}
+
+// Login find match username and password
+func (r *UserRepository) Login(l models.Login) (auth bool, user models.User, err error) {
+	db := r.DB.EsignRead()
+
+	defer db.Close()
+	_, err = db.Select("*").From("users").
+		Where("nip = ?", l.Nip).
+		Where("password = ?", l.Password).
+		Load(&user)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": err,
+			"data":  l,
+		}).Error("[REPO Login] error get from DB")
+
+		return
+	}
+	if user.ID == 0 {
+		auth = false
+	} else {
+		auth = true
+	}
+	return
+}
+
+// GetUserByNIPstore agent type data to database
+func (r *UserRepository) GetUserByNIPstore(nip string) (user models.User, err error) {
+	db := r.DB.EsignRead()
+
+	tx, _ := db.Begin()
+
+	defer tx.RollbackUnlessCommitted()
+	err = tx.Select("*").From("users").Where("nip = ?", nip).LoadOne(&user)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": err,
+			"data":  nip,
+		}).Error("[REPO GetUserByNIP] error get from DB")
+		tx.Rollback()
+		return
+	}
+	tx.Commit()
 	return
 }
