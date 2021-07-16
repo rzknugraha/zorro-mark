@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
@@ -18,6 +19,7 @@ type IUserService interface {
 	UpdateUser(IDuser int, data models.User) (err error)
 	FindUserByIDDPR(IDDPR int) (user models.User, err error)
 	Login(l models.Login) (result models.TokenResp, err error)
+	Profile(ctx context.Context, NIP string) (Response *helpers.JSONResponse, err error)
 }
 
 // UserService is
@@ -90,4 +92,30 @@ func (p *UserService) Login(l models.Login) (token models.TokenResp, err error) 
 	token, err = helpers.GenerateToken(user)
 
 	return
+}
+
+// Profile is
+func (p *UserService) Profile(ctx context.Context, NIP string) (Response *helpers.JSONResponse, err error) {
+
+	Filter := map[string]interface{}{
+		"nip": NIP,
+	}
+	user, err := p.UserRepository.FindOneUser(ctx, Filter)
+	if err != nil {
+		return
+	}
+
+	if user.ID == 0 {
+		return &helpers.JSONResponse{
+			Code:    4400,
+			Message: "Not Found",
+			Data:    nil,
+		}, nil
+	}
+
+	return &helpers.JSONResponse{
+		Code:    2200,
+		Message: "Found",
+		Data:    user,
+	}, nil
 }

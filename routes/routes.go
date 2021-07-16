@@ -2,6 +2,8 @@
 package routes
 
 import (
+	"net/http"
+
 	"github.com/gorilla/mux"
 	"github.com/rzknugraha/zorro-mark/controllers"
 )
@@ -23,6 +25,11 @@ func (r *Route) Init() *mux.Router {
 	v1.HandleFunc("/healthcheck", healthCheckController.HealthCheck).Methods("GET")
 	v1.HandleFunc("/player", playerController.StorePlayer).Methods("POST")
 	v1.HandleFunc("/login", userController.Login).Methods("POST")
+
+	ClientAuth := v1.PathPrefix("/client").Subrouter()
+	ClientAuth.Use(JWTAuthMiddleware)
+
+	ClientAuth.HandleFunc("/profile", userController.Profile).Methods(http.MethodGet)
 
 	return v1
 }
