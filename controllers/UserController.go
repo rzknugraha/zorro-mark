@@ -125,6 +125,6 @@ func (c *UserController) Profile(res http.ResponseWriter, req *http.Request) {
 		}).Info(fmt.Sprintf("success-get-profile-%s", nip))
 	}
 
-	helpers.Response(res, http.StatusOK, data)
+	helpers.DirectResponse(res, http.StatusOK, data)
 	return
 }

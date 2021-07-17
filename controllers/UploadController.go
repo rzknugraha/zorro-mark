@@ -4,10 +4,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 
+	"github.com/gorilla/mux"
 	"github.com/rzknugraha/zorro-mark/helpers"
 	"github.com/rzknugraha/zorro-mark/services"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 // InitUploadController is
@@ -112,7 +115,7 @@ func (c *UploadController) Upload(res http.ResponseWriter, req *http.Request) {
 			"error":     err,
 		}).Error(fmt.Sprintf("failed-store-file"))
 
-		helpers.Response(res, http.StatusOK, &helpers.JSONResponse{
+		helpers.DirectResponse(res, http.StatusInternalServerError, &helpers.JSONResponse{
 			Code:    5500,
 			Message: "Internal server error",
 			Error:   err.Error(),
@@ -138,7 +141,58 @@ func (c *UploadController) Upload(res http.ResponseWriter, req *http.Request) {
 		}).Info(fmt.Sprintf("failed-store-file"))
 	}
 
-	helpers.Response(res, http.StatusOK, data)
+	helpers.DirectResponse(res, http.StatusOK, data)
+	return
+
+}
+
+// GetFile is
+func (c *UploadController) GetFile(res http.ResponseWriter, req *http.Request) {
+
+	fileName := mux.Vars(req)["filename"]
+
+	path := viper.GetString("storage.path")
+	// Open file
+	f, err := os.Open("./" + path + "/" + fileName)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code":      5500,
+			"event":     "failed-get-file",
+			"file-info": fileName,
+			"error":     err,
+		}).Error(fmt.Sprintf("failed-get-file"))
+
+		helpers.DirectResponse(res, http.StatusInternalServerError, &helpers.JSONResponse{
+			Code:    5500,
+			Message: "Internal server error",
+			Error:   err.Error(),
+			Data:    nil,
+		})
+		return
+	}
+	defer f.Close()
+
+	//Set header
+	res.Header().Set("Content-type", "application/pdf")
+
+	//Stream to response
+	if _, err := io.Copy(res, f); err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code":      5500,
+			"event":     "failed-stream-file",
+			"file-info": fileName,
+			"error":     err,
+		}).Error(fmt.Sprintf("failed-stream-file"))
+
+		helpers.DirectResponse(res, http.StatusInternalServerError, &helpers.JSONResponse{
+			Code:    5500,
+			Message: "Internal server error",
+			Error:   err.Error(),
+			Data:    nil,
+		})
+		return
+	}
+
 	return
 
 }
