@@ -36,7 +36,7 @@ func (s *UploadService) StoreFile(ctx context.Context, file multipart.File, oldN
 
 	fileResp.FileName = fmt.Sprintf("/file/%d-%s", time.Now().UnixNano(), oldName)
 
-	dst, err := os.Create(fileResp.FileName)
+	dst, err := os.Create("." + fileResp.FileName)
 	if err != nil {
 		return
 

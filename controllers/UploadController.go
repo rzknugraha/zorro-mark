@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/rzknugraha/zorro-mark/helpers"
@@ -30,13 +31,22 @@ func (c *UploadController) Upload(res http.ResponseWriter, req *http.Request) {
 
 	req.ParseMultipartForm(10 << 20)
 
-	file, handler, err := req.FormFile("myFile")
+	file, handler, err := req.FormFile("file")
 	if err != nil {
-		fmt.Println("Error Retrieving the File")
-		fmt.Println(err)
+		resp := map[string]interface{}{
+			"code":    5500,
+			"message": "Error Get File",
+			"event":   "failed-store-file",
+			"error":   err.Error(),
+			"data":    nil,
+		}
+
+		logrus.WithFields(resp).Info(fmt.Sprintf("failed-store-file"))
+		helpers.DirectResponse(res, http.StatusInternalServerError, resp)
 		return
 	}
 	fmt.Println(handler.Size)
+	fmt.Println(handler.Filename)
 
 	defer file.Close()
 
@@ -53,28 +63,47 @@ func (c *UploadController) Upload(res http.ResponseWriter, req *http.Request) {
 		}
 
 		logrus.WithFields(resp).Info(fmt.Sprintf("failed-store-file"))
-		helpers.Response(res, http.StatusInternalServerError, resp)
+		helpers.DirectResponse(res, http.StatusInternalServerError, resp)
 		return
 
 	}
 
+	fmt.Println("buff")
+	fmt.Println(buff)
 	filetype := http.DetectContentType(buff)
 	if filetype != "application/pdf" {
 		resp := map[string]interface{}{
 			"code":    4400,
 			"message": "Only PDF File",
 			"event":   "validation-file",
+			"error":   "",
+			"data":    nil,
+		}
+
+		logrus.WithFields(resp).Info(fmt.Sprintf("failed-store-file"))
+		helpers.DirectResponse(res, http.StatusInternalServerError, resp)
+		return
+
+	}
+	fmt.Println("filetype")
+	fmt.Println(filetype)
+	_, err = file.Seek(0, io.SeekStart)
+	if err != nil {
+		resp := map[string]interface{}{
+			"code":    4400,
+			"message": "Error seek file",
+			"event":   "validation-file",
 			"error":   err.Error(),
 			"data":    nil,
 		}
 
 		logrus.WithFields(resp).Info(fmt.Sprintf("failed-store-file"))
-		helpers.Response(res, http.StatusInternalServerError, resp)
+		helpers.DirectResponse(res, http.StatusInternalServerError, resp)
 		return
-
 	}
-
-	data, err := c.UploadService.StoreFile(req.Context(), file,handler.Filename)
+	fmt.Println("file")
+	fmt.Println(file)
+	data, err := c.UploadService.StoreFile(req.Context(), file, handler.Filename)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"code":      5500,
@@ -88,14 +117,16 @@ func (c *UploadController) Upload(res http.ResponseWriter, req *http.Request) {
 			Message: "Internal server error",
 			Error:   err.Error(),
 		})
+		return
 	}
-
+	fmt.Println("data")
+	fmt.Println(data)
 	if data.Code != 2200 {
 		logrus.WithFields(logrus.Fields{
 			"code":      4400,
 			"event":     "failed-store-file",
 			"file-info": handler,
-			"error":     err,
+			"error":     "error store file",
 		}).Error(fmt.Sprintf("failed-store-file"))
 
 	} else {
@@ -103,7 +134,7 @@ func (c *UploadController) Upload(res http.ResponseWriter, req *http.Request) {
 			"code":      2200,
 			"event":     "success-store-file",
 			"file-info": handler,
-			"error":     err,
+			"error":     nil,
 		}).Info(fmt.Sprintf("failed-store-file"))
 	}
 

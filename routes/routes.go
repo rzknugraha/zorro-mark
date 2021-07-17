@@ -17,6 +17,7 @@ func (r *Route) Init() *mux.Router {
 	healthCheckController := controllers.InitHealthCheckController()
 	playerController := controllers.InitPlayerController()
 	userController := controllers.InitUserController()
+	uploadController := controllers.InitUploadController()
 
 	// Initialize router //
 	router := mux.NewRouter().StrictSlash(false)
@@ -25,6 +26,7 @@ func (r *Route) Init() *mux.Router {
 	v1.HandleFunc("/healthcheck", healthCheckController.HealthCheck).Methods("GET")
 	v1.HandleFunc("/player", playerController.StorePlayer).Methods("POST")
 	v1.HandleFunc("/login", userController.Login).Methods("POST")
+	v1.HandleFunc("/upload", uploadController.Upload).Methods("POST")
 
 	ClientAuth := v1.PathPrefix("/client").Subrouter()
 	ClientAuth.Use(JWTAuthMiddleware)
