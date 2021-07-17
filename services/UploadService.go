@@ -6,10 +6,12 @@ import (
 	"io"
 	"mime/multipart"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/rzknugraha/zorro-mark/helpers"
 	"github.com/rzknugraha/zorro-mark/models"
+	"github.com/spf13/viper"
 )
 
 // IUploadService is
@@ -32,11 +34,16 @@ func InitUploadService() *UploadService {
 // StoreFile is
 func (s *UploadService) StoreFile(ctx context.Context, file multipart.File, oldName string) (Response *helpers.JSONResponse, err error) {
 
-	var fileResp models.UploadResp
+	trimSpace := strings.ReplaceAll(oldName, " ", "")
+	path := viper.GetString("storage.path")
 
-	fileResp.FileName = fmt.Sprintf("/file/%d-%s", time.Now().UnixNano(), oldName)
+	fileResp := models.UploadResp{
+		FileName: fmt.Sprintf("%d-%s", time.Now().UnixNano(), trimSpace),
+	}
 
-	dst, err := os.Create("." + fileResp.FileName)
+	fullPath := fmt.Sprintf("/%s/%s", path, fileResp.FileName)
+
+	dst, err := os.Create("." + fullPath)
 	if err != nil {
 		return
 
