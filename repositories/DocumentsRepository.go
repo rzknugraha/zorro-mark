@@ -98,3 +98,27 @@ func (r *DocumentsRepository) CountNameByUserID(ctx context.Context, doc models.
 
 	return
 }
+
+//GetDocByUserID get document
+func (r *DocumentsRepository) GetDocByUserID(ctx context.Context, conditon map[string]interface{}) (totalID int64, err error) {
+
+	db := r.DB.EsignRead()
+
+	q := db.Select("*").From("documents")
+
+	for key, val := range conditon {
+		q.Where(key+" = ?", val)
+	}
+
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": err,
+			"data":  conditon,
+		}).Error("[REPO GetDocByUserID]error count filename from DB")
+
+		return
+	}
+
+	return
+}
