@@ -5,7 +5,10 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 
+	"github.com/dgrijalva/jwt-go"
+	gorillaContext "github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"github.com/rzknugraha/zorro-mark/helpers"
 	"github.com/rzknugraha/zorro-mark/services"
@@ -16,12 +19,11 @@ import (
 // InitUploadController is
 func InitUploadController() *UploadController {
 
-	uploadService := new(services.UploadService)
+	uploadService := services.InitUploadService()
 
-	uploadController := new(UploadController)
-	uploadController.UploadService = uploadService
-
-	return uploadController
+	return &UploadController{
+		UploadService: uploadService,
+	}
 }
 
 // UploadController is
@@ -31,6 +33,24 @@ type UploadController struct {
 
 // Upload is
 func (c *UploadController) Upload(res http.ResponseWriter, req *http.Request) {
+	UserInfo, _ := gorillaContext.Get(req, "UserInfo").(jwt.MapClaims)
+
+	IDUser := fmt.Sprintf("%v", UserInfo["id"])
+
+	intIDUser, err := strconv.Atoi(IDUser)
+	if err != nil {
+		resp := map[string]interface{}{
+			"code":    5500,
+			"message": "Error convert ID",
+			"event":   "failed-store-file",
+			"error":   err.Error(),
+			"data":    nil,
+		}
+
+		logrus.WithFields(resp).Info(fmt.Sprintf("failed-store-file"))
+		helpers.DirectResponse(res, http.StatusInternalServerError, resp)
+		return
+	}
 
 	req.ParseMultipartForm(10 << 20)
 
@@ -48,8 +68,6 @@ func (c *UploadController) Upload(res http.ResponseWriter, req *http.Request) {
 		helpers.DirectResponse(res, http.StatusInternalServerError, resp)
 		return
 	}
-	fmt.Println(handler.Size)
-	fmt.Println(handler.Filename)
 
 	defer file.Close()
 
@@ -104,9 +122,8 @@ func (c *UploadController) Upload(res http.ResponseWriter, req *http.Request) {
 		helpers.DirectResponse(res, http.StatusInternalServerError, resp)
 		return
 	}
-	fmt.Println("file")
-	fmt.Println(file)
-	data, err := c.UploadService.StoreFile(req.Context(), file, handler.Filename)
+
+	data, err := c.UploadService.StoreFile(req.Context(), file, handler.Filename, intIDUser)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"code":      5500,

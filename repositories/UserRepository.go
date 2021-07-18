@@ -32,20 +32,17 @@ type UserRepository struct {
 func (r *UserRepository) GetUserByIDDPR(IDDpr int) (user models.User, err error) {
 	db := r.DB.EsignRead()
 
-	tx, _ := db.Begin()
-
-	defer tx.RollbackUnlessCommitted()
-	err = tx.Select("*").From("users").Where("id_dpr = ?", IDDpr).LoadOne(&user)
+	err = db.Select("*").From("users").Where("id_dpr = ?", IDDpr).LoadOne(&user)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"code":  5500,
 			"error": err,
 			"data":  IDDpr,
 		}).Error("[REPO GetUserByIDDPR] error get from DB")
-		tx.Rollback()
+
 		return
 	}
-	tx.Commit()
+
 	return
 }
 
