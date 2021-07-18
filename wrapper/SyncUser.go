@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/guregu/null"
 	"github.com/rzknugraha/zorro-mark/models"
 	"github.com/rzknugraha/zorro-mark/services"
 	"github.com/sirupsen/logrus"
@@ -20,6 +21,7 @@ type SyncUser struct {
 	UserService services.IUserService
 }
 
+//InitSyncUser init sync user
 func InitSyncUser() *SyncUser {
 	UserService := services.InitUserService()
 
@@ -92,9 +94,9 @@ func (w *SyncUser) Run() {
 			IDSatker:    intIDSatker,
 			IDSubSatker: intIDSubSatker,
 		}
-		fmt.Println(userDB)
+
 		getUser, err := w.UserService.FindUserByIDDPR(userDB.IDDpr)
-		fmt.Println(getUser)
+
 		if err != nil {
 			logrus.WithFields(logrus.Fields{
 				"code":  5500,
@@ -120,6 +122,7 @@ func (w *SyncUser) Run() {
 
 			userDB.Password = string(hashedPassword)
 			userDB.Status = 1
+			userDB.Role = null.StringFrom("user")
 
 			err = w.UserService.StoreUser(userDB)
 			if err != nil {
@@ -133,6 +136,8 @@ func (w *SyncUser) Run() {
 			logrus.Info("success insert " + userDB.NIP)
 
 		} else {
+			userDB.Role = null.StringFrom("user")
+			fmt.Println(userDB)
 			err = w.UserService.UpdateUser(getUser.ID, userDB)
 			if err != nil {
 				logrus.WithFields(logrus.Fields{

@@ -4,6 +4,7 @@ import (
 
 	//"github.com/afex/hystrix-go/hystrix"
 
+	"context"
 	"errors"
 	"time"
 
@@ -17,6 +18,9 @@ type IUserRepository interface {
 	GetUserByIDDPR(IDDpr int) (user models.User, err error)
 	StoreUser(user models.User) (count int64, err error)
 	UpdateUserByID(id int, user models.User) (err error)
+	Login(l models.Login) (auth bool, user models.User, err error)
+	GetUserByNIPstore(nip string) (user models.User, err error)
+	FindOneUser(ctx context.Context, Condition map[string]interface{}) (User models.User, err error)
 }
 
 // UserRepository is
@@ -28,24 +32,21 @@ type UserRepository struct {
 func (r *UserRepository) GetUserByIDDPR(IDDpr int) (user models.User, err error) {
 	db := r.DB.EsignRead()
 
-	tx, _ := db.Begin()
-
-	defer tx.RollbackUnlessCommitted()
-	err = tx.Select("*").From("users").Where("id_dpr = ?", IDDpr).LoadOne(&user)
+	err = db.Select("*").From("users").Where("id_dpr = ?", IDDpr).LoadOne(&user)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"code":  5500,
 			"error": err,
 			"data":  IDDpr,
 		}).Error("[REPO GetUserByIDDPR] error get from DB")
-		tx.Rollback()
+
 		return
 	}
-	tx.Commit()
+
 	return
 }
 
-// StoreUser store agent type data to database
+// StoreUser store user  data to database
 func (r *UserRepository) StoreUser(user models.User) (count int64, err error) {
 
 	db := r.DB.EsignWrite()
@@ -57,7 +58,8 @@ func (r *UserRepository) StoreUser(user models.User) (count int64, err error) {
 	user.UpdatedAt = time.Now().Local()
 
 	res, err := tx.InsertInto("users").
-		Columns("id_dpr", "nama", "ktp", "nama_jabatan", "nama_satker", "status", "created_at", "updated_at", "nip", "id_satker", "id_subsatker", "password").
+		Columns("id_dpr", "nama", "ktp", "nama_jabatan", "nama_satker", "status", "created_at", "updated_at", "password",
+			"email", "handphone", "role", "provinsi", "avatar", "identity_file", "sign_file", "sr_file", "sn_certificate").
 		Record(&user).
 		Exec()
 	if err != nil {
@@ -92,6 +94,7 @@ func (r *UserRepository) UpdateUserByID(id int, user models.User) (err error) {
 		Set("nip", user.NIP).
 		Set("id_satker", user.IDSatker).
 		Set("id_subsatker", user.IDSubSatker).
+		Set("role", user.Role).
 		Where("id = ?", id).Exec()
 
 	if err != nil {
@@ -107,6 +110,77 @@ func (r *UserRepository) UpdateUserByID(id int, user models.User) (err error) {
 	rows, _ := rec.RowsAffected()
 	if rows == 0 {
 		return errors.New("No rows affected")
+	}
+
+	return
+}
+
+// Login find match username and password
+func (r *UserRepository) Login(l models.Login) (auth bool, user models.User, err error) {
+	db := r.DB.EsignRead()
+
+	defer db.Close()
+	_, err = db.Select("*").From("users").
+		Where("nip = ?", l.Nip).
+		Where("password = ?", l.Password).
+		Load(&user)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": err,
+			"data":  l,
+		}).Error("[REPO Login] error get from DB")
+
+		return
+	}
+	if user.ID == 0 {
+		auth = false
+	} else {
+		auth = true
+	}
+	return
+}
+
+// GetUserByNIPstore agent type data to database
+func (r *UserRepository) GetUserByNIPstore(nip string) (user models.User, err error) {
+	db := r.DB.EsignRead()
+
+	tx, _ := db.Begin()
+
+	defer tx.RollbackUnlessCommitted()
+	err = tx.Select("*").From("users").Where("nip = ?", nip).LoadOne(&user)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": err,
+			"data":  nip,
+		}).Error("[REPO GetUserByNIP] error get from DB")
+		tx.Rollback()
+		return
+	}
+	tx.Commit()
+	return
+}
+
+// FindOneUser func
+func (r *UserRepository) FindOneUser(ctx context.Context, Condition map[string]interface{}) (User models.User, err error) {
+
+	db := r.DB.EsignRead()
+
+	a := db.Select("*").From("users")
+
+	for key, val := range Condition {
+		a.Where(key+" = ?", val)
+	}
+
+	_, err = a.LoadContext(ctx, &User)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": err,
+			"data":  Condition,
+		}).Error("[REPO FindOneUser] error get from DB")
+		return
 	}
 
 	return

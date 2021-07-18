@@ -2,23 +2,34 @@ package models
 
 import (
 	"time"
+
+	"github.com/guregu/null"
 )
 
 //User data struct
 type User struct {
-	ID          int
-	IDDpr       int
-	Nama        string
-	Ktp         string
-	NamaJabatan string
-	NamaSatker  string
-	Status      int
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	NIP         string
-	IDSatker    int
-	IDSubSatker int
-	Password    string
+	ID            int         `db:"id" json:"id"`
+	IDDpr         int         `db:"id_dpr" json:"id_dpr"`
+	Nama          string      `db:"nama" json:"nama"`
+	Ktp           string      `db:"ktp" json:"ktp"`
+	NamaJabatan   string      `db:"nama_jabatan" json:"nama_jabatan"`
+	NamaSatker    string      `db:"nama_satker" json:"nama_satker"`
+	Status        int         `db:"status" json:"status"`
+	CreatedAt     time.Time   `db:"created_at" json:"created_at"`
+	UpdatedAt     time.Time   `db:"updated_at" json:"updated_at"`
+	NIP           string      `db:"nip" json:"nip"`
+	IDSatker      int         `db:"id_satker" json:"id_satker"`
+	IDSubSatker   int         `db:"id_sub_satker" json:"id_sub_satker"`
+	Email         null.String `db:"email" json:"email"`
+	Handphone     null.String `db:"handphone" json:"handphone"`
+	Role          null.String `db:"role" json:"role"`
+	Provinsi      null.String `db:"provinsi" json:"provinsi"`
+	Avatar        null.String `db:"avatar" json:"avatar"`
+	IdentityFile  null.String `db:"identity_file" json:"identity_file"`
+	SignFile      null.String `db:"sign_file" json:"sign_file"`
+	SRFile        null.String `db:"sr_file" json:"sr_file"`
+	SNCertificate null.String `db:"sn_certificate" json:"sn_certificate"`
+	Password      string      `db:"password" json:"password"`
 }
 
 //UserDPR data struct
@@ -31,4 +42,10 @@ type UserDPR struct {
 	IDSatker    string `json:"id_satker"`
 	NamaSatker  string `json:"nama_satker"`
 	IDSubSatker string `json:"id_subsatker"`
+}
+
+//Login for login paylioad
+type Login struct {
+	Nip      string `json:"nip"`
+	Password string `json:"password"`
 }
