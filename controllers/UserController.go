@@ -38,6 +38,12 @@ type UserController struct {
 
 // Login is
 func (c *UserController) Login(res http.ResponseWriter, req *http.Request) {
+
+	//Allow CORS here By * or specific origin
+	res.Header().Set("Access-Control-Allow-Origin", "*")
+
+	res.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
 	var l models.Login
 	//Read request data
 	body, _ := ioutil.ReadAll(req.Body)
