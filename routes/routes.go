@@ -24,8 +24,6 @@ func (r *Route) Init() *mux.Router {
 	v1 := router.PathPrefix("/v1").Subrouter()
 
 	v1.HandleFunc("/cors", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		// w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-CSRF-Token")
 
 		if r.Method == "OPTIONS" {
 			w.Write([]byte("allowed"))

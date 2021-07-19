@@ -20,6 +20,7 @@ import (
 
 	"github.com/rzknugraha/zorro-mark/routes"
 	"github.com/spf13/cobra"
+	"github.com/rs/cors"
 )
 
 // serveHTTPCmd represents the serveHttp command
@@ -35,7 +36,9 @@ to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		route := new(routes.Route)
 		router := route.Init()
-		log.Fatal(http.ListenAndServe(":8099", router))
+
+		handler := cors.Default().Handler(router)
+		log.Fatal(http.ListenAndServe(":8099", handler))
 	},
 }
 
