@@ -79,7 +79,7 @@ func (r *DocumentUserRepository) GetDocByUser(ctx context.Context, conditon map[
 		"document_user.shared",
 		"document_user.signing",
 		"document_user.labels",
-		"document_user.signed",
+		"documents.signed",
 		"document_user.created_at",
 		"document_user.updated_at",
 		"document_user.status",
