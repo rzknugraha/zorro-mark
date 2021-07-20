@@ -18,6 +18,7 @@ func (r *Route) Init() *mux.Router {
 	playerController := controllers.InitPlayerController()
 	userController := controllers.InitUserController()
 	uploadController := controllers.InitUploadController()
+	documentController := controllers.InitDocumentController()
 
 	// Initialize router //
 	router := mux.NewRouter().StrictSlash(false)
@@ -42,6 +43,7 @@ func (r *Route) Init() *mux.Router {
 	ClientAuth.HandleFunc("/profile", userController.Profile).Methods(http.MethodGet)
 	ClientAuth.HandleFunc("/file/upload", uploadController.Upload).Methods("POST")
 	ClientAuth.HandleFunc("/file/get/{filename}", uploadController.GetFile).Methods("GET")
+	ClientAuth.HandleFunc("/document/get", documentController.GetDocuments).Methods("GET")
 
 	return v1
 }
