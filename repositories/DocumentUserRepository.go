@@ -39,7 +39,6 @@ func (r *DocumentUserRepository) StoreDocumentUser(ctx context.Context, db *dbr.
 			"shared",
 			"signing",
 			"labels",
-			"signed",
 			"created_at",
 			"status").
 		Record(&doc).ExecContext(ctx)
