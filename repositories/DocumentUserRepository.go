@@ -18,7 +18,7 @@ import (
 // IDocumentUserRepository is
 type IDocumentUserRepository interface {
 	StoreDocumentUser(ctx context.Context, db *dbr.Tx, doc models.DocumentUser) (idDocUser int64, err error)
-	GetDocByUser(ctx context.Context, conditon map[string]interface{}, paging helpers.PageReq) (dataDocs []models.DocumentUserJoinDoc, total int, err error)
+	GetDocByUser(ctx context.Context, conditon map[string]interface{}, paging helpers.PageReq, sorting string) (dataDocs []models.DocumentUserJoinDoc, total int, err error)
 }
 
 // DocumentUserRepository is
@@ -67,7 +67,7 @@ func (r *DocumentUserRepository) StoreDocumentUser(ctx context.Context, db *dbr.
 }
 
 //GetDocByUser get document spesific user
-func (r *DocumentUserRepository) GetDocByUser(ctx context.Context, conditon map[string]interface{}, paging helpers.PageReq) (dataDocs []models.DocumentUserJoinDoc, total int, err error) {
+func (r *DocumentUserRepository) GetDocByUser(ctx context.Context, conditon map[string]interface{}, paging helpers.PageReq, sorting string) (dataDocs []models.DocumentUserJoinDoc, total int, err error) {
 
 	db := r.DB.EsignRead()
 
@@ -112,6 +112,11 @@ func (r *DocumentUserRepository) GetDocByUser(ctx context.Context, conditon map[
 
 	q.Limit(uint64(paging.Limit))
 	q.Offset(uint64(paging.Offset))
+	if sorting == "ASC" {
+		q.OrderAsc("document_user.id")
+	} else {
+		q.OrderDesc("document_user.id")
+	}
 
 	_, err = q.LoadContext(ctx, &dataDocs)
 	if err != nil {

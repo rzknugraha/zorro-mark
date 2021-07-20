@@ -56,6 +56,7 @@ func (c *DocumentController) GetDocuments(res http.ResponseWriter, req *http.Req
 		Shared:   shared,
 		UserID:   intIDUser,
 		FileName: params.Get("file_name"),
+		Sort:     params.Get("sort"),
 	}
 
 	pageReq := helpers.PageReq{

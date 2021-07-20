@@ -41,4 +41,5 @@ type DocumentUserFilter struct {
 	Labels   int    `db:"labels" json:"labels"`
 	Signed   int    `db:"signed" json:"signed"`
 	FileName string `db:"file_name" json:"file_name"`
+	Sort     string `db:"sort" json:"sort"`
 }

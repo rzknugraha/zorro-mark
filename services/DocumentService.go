@@ -53,6 +53,8 @@ func (s *DocumentService) GetDocumentUser(ctx context.Context, filter models.Doc
 		"document_user.user_id": filter.UserID,
 	}
 
+	sorting := "ASC"
+
 	if filter.Starred > 0 {
 		condition["document_user.starred"] = filter.Starred
 	}
@@ -71,8 +73,11 @@ func (s *DocumentService) GetDocumentUser(ctx context.Context, filter models.Doc
 	if filter.FileName != "" {
 		condition["documents.file_name"] = filter.FileName
 	}
+	if filter.Sort != "" {
+		sorting = filter.Sort
+	}
 
-	dataDocs, count, err := s.DocumentUserRepository.GetDocByUser(ctx, condition, page)
+	dataDocs, count, err := s.DocumentUserRepository.GetDocByUser(ctx, condition, page, sorting)
 
 	pages := helpers.NewPaginate(page.Page, page.Limit, count)
 
