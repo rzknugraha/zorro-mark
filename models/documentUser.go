@@ -9,7 +9,6 @@ type DocumentUser struct {
 	Shared     int    `db:"shared" json:"shared"`
 	Signing    int    `db:"signing" json:"signing"`
 	Labels     int    `db:"labels" json:"labels"`
-	Signed     int    `db:"signed" json:"signed"`
 	CreatedAt  string `db:"created_at" json:"created_at"`
 	UpdatedAt  string `db:"updated_at" json:"updated_at"`
 	Status     int    `db:"status" json:"status"`
