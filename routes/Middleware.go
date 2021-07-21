@@ -17,6 +17,8 @@ var signKey = []byte(viper.GetString("jwt.signature_key"))
 // JWTAuthMiddleware middleware func
 func JWTAuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// w.Header().Set("Content-Type", "application/json")
+		// w.Header().Set("Access-Control-Allow-Origin", "*")
 
 		if r.URL.Path == "/login" {
 			next.ServeHTTP(w, r)

@@ -18,9 +18,9 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/rs/cors"
 	"github.com/rzknugraha/zorro-mark/routes"
 	"github.com/spf13/cobra"
-	"github.com/rs/cors"
 )
 
 // serveHTTPCmd represents the serveHttp command
@@ -38,6 +38,15 @@ to quickly create a Cobra application.`,
 		router := route.Init()
 
 		handler := cors.Default().Handler(router)
+
+		c := cors.New(cors.Options{
+			AllowCredentials: true,
+			// Enable Debugging for testing, consider disabling in production
+			Debug:          true,
+			AllowedHeaders: []string{"*"},
+		})
+		handler = c.Handler(handler)
+
 		log.Fatal(http.ListenAndServe(":8099", handler))
 	},
 }
