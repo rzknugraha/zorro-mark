@@ -42,3 +42,11 @@ type DocumentUserFilter struct {
 	FileName string `db:"file_name" json:"file_name"`
 	Sort     string `db:"sort" json:"sort"`
 }
+
+//UpdateDocReq data struct
+type UpdateDocReq struct {
+	FieldType  string `json:"field_type" validate:"oneof='starred' 'signing' 'signed' 'labels' 'shared' 'status',required,alpha"`
+	FieldValue string `json:"field_value" validate:"numeric,required"`
+	DocumentID int    `db:"document_id" json:"document_id" validate:"required"`
+	UserID     int    `db:"user_id" json:"user_id"`
+}
