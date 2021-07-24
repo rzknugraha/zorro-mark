@@ -22,8 +22,11 @@ func GenerateToken(user models.User) (t models.TokenResp, err error) {
 			Issuer:    appName,
 			ExpiresAt: time.Now().Add(expired).Unix(),
 		},
-		Nip: user.NIP,
-		ID:  user.ID,
+		Nip:        user.NIP,
+		ID:         user.ID,
+		Name:       user.Nama,
+		Position:   user.NamaJabatan,
+		IdentityNO: user.Ktp,
 	}
 
 	token := jwt.NewWithClaims(
@@ -43,6 +46,12 @@ func GenerateToken(user models.User) (t models.TokenResp, err error) {
 
 	t.Token = signedToken
 	t.Expired = time.Now().Add(expired).UTC().Format(time.RFC1123)
+
+	t.DataUser.ID = user.ID
+	t.DataUser.Name = user.Nama
+	t.DataUser.IdentityNO = user.Ktp
+	t.DataUser.Nip = user.NIP
+	t.DataUser.Position = user.NamaJabatan
 
 	return
 }

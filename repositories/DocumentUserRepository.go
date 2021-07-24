@@ -19,6 +19,7 @@ import (
 type IDocumentUserRepository interface {
 	StoreDocumentUser(ctx context.Context, db *dbr.Tx, doc models.DocumentUser) (idDocUser int64, err error)
 	GetDocByUser(ctx context.Context, conditon map[string]interface{}, paging helpers.PageReq, sorting string) (dataDocs []models.DocumentUserJoinDoc, total int, err error)
+	UpdateDocUsers(ctx context.Context, db *dbr.Tx, Condition map[string]interface{}, Payload map[string]interface{}) (affect int64, err error)
 }
 
 // DocumentUserRepository is
@@ -127,6 +128,30 @@ func (r *DocumentUserRepository) GetDocByUser(ctx context.Context, conditon map[
 
 		return
 	}
+
+	return
+}
+
+// UpdateDocUsers func
+func (r *DocumentUserRepository) UpdateDocUsers(ctx context.Context, db *dbr.Tx, Condition map[string]interface{}, Payload map[string]interface{}) (affect int64, err error) {
+	span, _ := apm.StartSpan(ctx, "UpdateClient", "NewClientRepository")
+	defer span.End()
+
+	up := db.Update("document_user")
+
+	for key, val := range Condition {
+		up.Where(key+" = ?", val)
+	}
+
+	result, err := up.SetMap(Payload).ExecContext(ctx)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": err,
+			"data":  Condition,
+		}).Error("[REPO UpdateDocUsers] error update")
+	}
+	affect, _ = result.RowsAffected()
 
 	return
 }
