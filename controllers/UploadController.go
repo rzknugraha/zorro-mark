@@ -53,7 +53,7 @@ func (c *UploadController) Upload(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	req.ParseMultipartForm(10 << 20)
+	req.ParseMultipartForm(1000 << 20)
 
 	file, handler, err := req.FormFile("file")
 	if err != nil {
