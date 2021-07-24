@@ -20,6 +20,7 @@ type IDocumentUserRepository interface {
 	StoreDocumentUser(ctx context.Context, db *dbr.Tx, doc models.DocumentUser) (idDocUser int64, err error)
 	GetDocByUser(ctx context.Context, conditon map[string]interface{}, paging helpers.PageReq, sorting string) (dataDocs []models.DocumentUserJoinDoc, total int, err error)
 	UpdateDocUsers(ctx context.Context, db *dbr.Tx, Condition map[string]interface{}, Payload map[string]interface{}) (affect int64, err error)
+	GetSingleDocByUser(ctx context.Context, userID int, documentID int) (dataDoc models.DocumentUserJoinDoc, err error)
 }
 
 // DocumentUserRepository is
@@ -152,6 +153,47 @@ func (r *DocumentUserRepository) UpdateDocUsers(ctx context.Context, db *dbr.Tx,
 		}).Error("[REPO UpdateDocUsers] error update")
 	}
 	affect, _ = result.RowsAffected()
+
+	return
+}
+
+//GetSingleDocByUser get document spesific user
+func (r *DocumentUserRepository) GetSingleDocByUser(ctx context.Context, userID int, documentID int) (dataDoc models.DocumentUserJoinDoc, err error) {
+
+	db := r.DB.EsignRead()
+
+	err = db.Select(
+		"document_user.id",
+		"document_user.document_id",
+		"document_user.user_id",
+		"document_user.starred",
+		"document_user.shared",
+		"document_user.signing",
+		"document_user.labels",
+		"documents.signed",
+		"document_user.created_at",
+		"document_user.updated_at",
+		"document_user.status",
+		"documents.file_name",
+		"documents.path",
+	).
+		From("document_user").
+		LeftJoin("documents", "document_user.document_id = documents.id").
+		Where("document_user.document_id = ?", documentID).
+		Where("document_user.user_id = ?", userID).
+		LoadOneContext(ctx, &dataDoc)
+
+	if err != nil {
+		if err != dbr.ErrNotFound {
+			logrus.WithFields(logrus.Fields{
+				"code":  5500,
+				"error": err,
+				"data":  userID,
+			}).Error("[REPO GetSingleDocByUser] error get data")
+		}
+		return
+
+	}
 
 	return
 }

@@ -49,3 +49,15 @@ type Login struct {
 	Nip      string `json:"nip"`
 	Password string `json:"password"`
 }
+
+//Shortuser for Shortuser paylioad
+type Shortuser struct {
+	ID          int    `db:"id" json:"id"`
+	Nip         string `json:"nip"`
+	Name        string `json:"name"`
+	Email       string `json:"email"`
+	Avatar      string `json:"avatar"`
+	IdentityNO  string `db:"identity_no" json:"identity_no"`
+	NamaJabatan string `db:"nama_jabatan" json:"nama_jabatan"`
+	NamaSatker  string `db:"nama_satker" json:"nama_satker"`
+}

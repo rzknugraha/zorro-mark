@@ -23,4 +23,5 @@ require (
 	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
 	golang.org/x/sys v0.0.0-20210503080704-8803ae5d1324 // indirect
 	golang.org/x/text v0.3.6 // indirect
+	gopkg.in/guregu/null.v3 v3.5.0
 )
