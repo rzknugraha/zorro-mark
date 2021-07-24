@@ -38,5 +38,7 @@ func (r *Route) Init() *mux.Router {
 	ClientAuth.HandleFunc("/document/get/{IDDoc}", documentController.GetSingleDocument).Methods("GET")
 	ClientAuth.HandleFunc("/document/update", documentController.UpdateDocument).Methods("POST")
 
+	ClientAuth.HandleFunc("/document/activity/get/{IDDoc}", documentController.GetDocActivity).Methods("GET")
+
 	return v1
 }

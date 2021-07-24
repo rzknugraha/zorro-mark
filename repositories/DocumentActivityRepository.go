@@ -12,6 +12,7 @@ import (
 	"github.com/rzknugraha/zorro-mark/models"
 	"github.com/sirupsen/logrus"
 	"go.elastic.co/apm"
+	"gopkg.in/guregu/null.v3"
 )
 
 // IDocumentActivityRepository is
@@ -31,8 +32,9 @@ func (r *DocumentActivityRepository) StoreDocumentActivity(ctx context.Context, 
 	defer span.End()
 
 	TimeNow := time.Now()
-	doc.CreatedAt = TimeNow.Format("2006-01-02 15:04:05")
+	time := TimeNow.Format("2006-01-02 15:04:05")
 
+	doc.CreatedAt = null.NewString(time, true)
 	res, err := db.InsertInto("document_activity").
 		Columns(
 			"document_id",
