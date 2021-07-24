@@ -1,19 +1,20 @@
 package controllers
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"strconv"
 
 	"github.com/dgrijalva/jwt-go"
 	gorillaContext "github.com/gorilla/context"
-	"github.com/gorilla/mux"
 	"github.com/rzknugraha/zorro-mark/helpers"
+	"github.com/rzknugraha/zorro-mark/models"
 	"github.com/rzknugraha/zorro-mark/services"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 )
 
 // InitUploadController is
@@ -166,16 +167,45 @@ func (c *UploadController) Upload(res http.ResponseWriter, req *http.Request) {
 // GetFile is
 func (c *UploadController) GetFile(res http.ResponseWriter, req *http.Request) {
 
-	fileName := mux.Vars(req)["filename"]
+	var path models.FileReq
+	//Read request data
+	body, _ := ioutil.ReadAll(req.Body)
+	err := json.Unmarshal(body, &path)
 
-	path := viper.GetString("storage.path")
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": err,
+			"data":  path,
+		}).Error("[CONTROLLER GetFile] error parsing params")
+
+		helpers.DirectResponse(res, http.StatusBadRequest, "Failed read input data")
+		return
+	}
+	if path.Path == "" {
+		logrus.WithFields(logrus.Fields{
+			"code":      4400,
+			"event":     "failed-get-file",
+			"file-info": "",
+			"error":     err,
+		}).Error(fmt.Sprintf("[CONTROLLER GetFile] failed-get-file"))
+
+		helpers.DirectResponse(res, http.StatusInternalServerError, &helpers.JSONResponse{
+			Code:    4400,
+			Message: "Error or empty path name",
+			Error:   "true",
+			Data:    nil,
+		})
+		return
+
+	}
 	// Open file
-	f, err := os.Open("./" + path + "/" + fileName)
+	f, err := os.Open("." + path.Path)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"code":      5500,
 			"event":     "failed-get-file",
-			"file-info": fileName,
+			"file-info": path,
 			"error":     err,
 		}).Error(fmt.Sprintf("failed-get-file"))
 
@@ -197,7 +227,7 @@ func (c *UploadController) GetFile(res http.ResponseWriter, req *http.Request) {
 		logrus.WithFields(logrus.Fields{
 			"code":      5500,
 			"event":     "failed-stream-file",
-			"file-info": fileName,
+			"file-info": path,
 			"error":     err,
 		}).Error(fmt.Sprintf("failed-stream-file"))
 
