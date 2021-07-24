@@ -14,14 +14,15 @@ import (
 // IDocumentService is
 type IDocumentService interface {
 	GetDocumentUser(ctx context.Context, filter models.DocumentUserFilter, page helpers.PageReq) (res *helpers.Paginate, err error)
-	UpdateDocumentAttributte(ctx context.Context, filter models.UpdateDocReq) (res *helpers.JSONResponse, err error)
+	UpdateDocumentAttributte(ctx context.Context, filter models.UpdateDocReq, userData models.Shortuser) (res *helpers.JSONResponse, err error)
 }
 
 // DocumentService is
 type DocumentService struct {
-	DocumentRepository     repositories.IDocumentsRepository
-	DocumentUserRepository repositories.IDocumentUserRepository
-	DB                     infrastructures.ISQLConnection
+	DocumentRepository         repositories.IDocumentsRepository
+	DocumentUserRepository     repositories.IDocumentUserRepository
+	DocumentActivityRepository repositories.IDocumentActivityRepository
+	DB                         infrastructures.ISQLConnection
 }
 
 // InitDocumentService init
@@ -32,9 +33,13 @@ func InitDocumentService() *DocumentService {
 	documentUserRepositories := new(repositories.DocumentUserRepository)
 	documentUserRepositories.DB = &infrastructures.SQLConnection{}
 
+	documentActivityRepositories := new(repositories.DocumentActivityRepository)
+	documentActivityRepositories.DB = &infrastructures.SQLConnection{}
+
 	DocumentService := new(DocumentService)
 	DocumentService.DocumentRepository = documentRepositories
 	DocumentService.DocumentUserRepository = documentUserRepositories
+	DocumentService.DocumentActivityRepository = documentActivityRepositories
 
 	return DocumentService
 }
@@ -97,7 +102,7 @@ func (s *DocumentService) GetDocumentUser(ctx context.Context, filter models.Doc
 }
 
 //UpdateDocumentAttributte update document only attribute
-func (s *DocumentService) UpdateDocumentAttributte(ctx context.Context, filter models.UpdateDocReq) (res *helpers.JSONResponse, err error) {
+func (s *DocumentService) UpdateDocumentAttributte(ctx context.Context, filter models.UpdateDocReq, userData models.Shortuser) (res *helpers.JSONResponse, err error) {
 
 	payload := map[string]interface{}{
 		filter.FieldType: filter.FieldValue,
@@ -145,6 +150,49 @@ func (s *DocumentService) UpdateDocumentAttributte(ctx context.Context, filter m
 			return
 		}
 	}
+	var actvity models.DocumentActivity
+
+	actvity.UserID = filter.UserID
+	actvity.DocumentID = filter.DocumentID
+	actvity.Name = userData.Name
+	actvity.NIP = userData.Nip
+	actvity.Status = 1
+
+	switch filter.FieldType {
+	case "starred":
+		if filter.FieldValue == 1 {
+			actvity.Message = "Document has been starred"
+			actvity.Type = "starred"
+		} else {
+			actvity.Message = "Document has been unstarred"
+			actvity.Type = "starred"
+		}
+	case "signed":
+		actvity.Message = "Document has been signed"
+		actvity.Type = "signed"
+
+	case "status":
+		if filter.FieldValue == 1 {
+			actvity.Message = "Document has been restore"
+			actvity.Type = "status"
+		} else {
+			actvity.Message = "Document has been deleted"
+			actvity.Type = "status"
+		}
+	case "shared":
+		if filter.FieldValue == 1 {
+			actvity.Message = "Document has been shared"
+			actvity.Type = "shared"
+		} else {
+			actvity.Message = "Document has been unshared"
+			actvity.Type = "shared"
+		}
+	default:
+		actvity.Message = "Document oh document"
+		actvity.Type = "unlisted"
+	}
+
+	_, err = s.DocumentActivityRepository.StoreDocumentActivity(ctx, tx, actvity)
 
 	tx.Commit()
 

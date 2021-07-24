@@ -99,10 +99,18 @@ func (c *DocumentController) UpdateDocument(res http.ResponseWriter, req *http.R
 	UserInfo, _ := gorillaContext.Get(req, "UserInfo").(jwt.MapClaims)
 
 	IDUser := fmt.Sprintf("%v", UserInfo["id"])
+	Name := fmt.Sprintf("%v", UserInfo["name"])
+	NIP := fmt.Sprintf("%v", UserInfo["nip"])
 
 	intIDUser, err := strconv.Atoi(IDUser)
 	if err != nil {
 		return
+	}
+
+	userData := models.Shortuser{
+		Name: Name,
+		Nip:  NIP,
+		ID:   intIDUser,
 	}
 
 	var dataReq models.UpdateDocReq
@@ -147,7 +155,7 @@ func (c *DocumentController) UpdateDocument(res http.ResponseWriter, req *http.R
 
 	dataReq.UserID = intIDUser
 
-	result, err := c.DocumentService.UpdateDocumentAttributte(req.Context(), dataReq)
+	result, err := c.DocumentService.UpdateDocumentAttributte(req.Context(), dataReq, userData)
 	if err != nil {
 		responseErr := &helpers.JSONResponse{
 			Code:    5500,
