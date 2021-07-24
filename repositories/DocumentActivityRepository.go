@@ -17,6 +17,7 @@ import (
 // IDocumentActivityRepository is
 type IDocumentActivityRepository interface {
 	StoreDocumentActivity(ctx context.Context, db *dbr.Tx, doc models.DocumentActivity) (idDocUser int64, err error)
+	GetActivityByDocID(ctx context.Context, documentID int) (activity []models.DocumentActivity, err error)
 }
 
 // DocumentActivityRepository is
@@ -61,6 +62,30 @@ func (r *DocumentActivityRepository) StoreDocumentActivity(ctx context.Context, 
 			"data":  doc,
 		}).Error("[REPO StoreDocumentUser] error get last ID")
 		return
+	}
+
+	return
+}
+
+//GetActivityByDocID get document spesific user
+func (r *DocumentActivityRepository) GetActivityByDocID(ctx context.Context, documentID int) (activity []models.DocumentActivity, err error) {
+
+	db := r.DB.EsignRead()
+
+	_, err = db.Select("*").
+		From("document_activity").
+		Where("document_id = ?", documentID).
+		LoadContext(ctx, &activity)
+
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": err,
+			"data":  documentID,
+		}).Error("[REPO GetSingleDocByUser] error get data")
+
+		return
+
 	}
 
 	return

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/gocraft/dbr/v2"
 	"github.com/rzknugraha/zorro-mark/helpers"
 	"github.com/rzknugraha/zorro-mark/infrastructures"
 	"github.com/rzknugraha/zorro-mark/models"
@@ -15,6 +16,8 @@ import (
 type IDocumentService interface {
 	GetDocumentUser(ctx context.Context, filter models.DocumentUserFilter, page helpers.PageReq) (res *helpers.Paginate, err error)
 	UpdateDocumentAttributte(ctx context.Context, filter models.UpdateDocReq, userData models.Shortuser) (res *helpers.JSONResponse, err error)
+	GetSingleDocByUser(ctx context.Context, docID int, userData models.Shortuser) (res *helpers.JSONResponse, err error)
+	GetActivityDoc(ctx context.Context, docID int, userData models.Shortuser) (res *helpers.JSONResponse, err error)
 }
 
 // DocumentService is
@@ -211,5 +214,69 @@ func (s *DocumentService) UpdateDocumentAttributte(ctx context.Context, filter m
 			Data:    nil,
 		}
 	}
+	return response, nil
+}
+
+//GetSingleDocByUser get single document
+func (s *DocumentService) GetSingleDocByUser(ctx context.Context, docID int, userData models.Shortuser) (res *helpers.JSONResponse, err error) {
+
+	found := 1
+	data, err := s.DocumentUserRepository.GetSingleDocByUser(ctx, userData.ID, docID)
+	if err != nil {
+		if err == dbr.ErrNotFound {
+			found = 0
+		} else {
+			logrus.WithFields(logrus.Fields{
+				"code":  5500,
+				"error": err,
+				"data":  docID,
+			}).Error("[Service GetSingleDocByUser] error get document users")
+			return
+		}
+
+	}
+
+	var response *helpers.JSONResponse
+
+	if found == 1 {
+		response = &helpers.JSONResponse{
+			Code:    2200,
+			Message: "Success",
+			Data:    data,
+		}
+
+	} else {
+		response = &helpers.JSONResponse{
+			Code:    4400,
+			Message: "Not Found",
+			Data:    nil,
+		}
+	}
+	return response, nil
+}
+
+//GetActivityDoc get single document
+func (s *DocumentService) GetActivityDoc(ctx context.Context, docID int, userData models.Shortuser) (res *helpers.JSONResponse, err error) {
+
+	data, err := s.DocumentActivityRepository.GetActivityByDocID(ctx, docID)
+	if err != nil {
+
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": err,
+			"data":  docID,
+		}).Error("[Service GetSingleDocByUser] error get document users")
+		return
+
+	}
+
+	var response *helpers.JSONResponse
+
+	response = &helpers.JSONResponse{
+		Code:    2200,
+		Message: "Success",
+		Data:    data,
+	}
+
 	return response, nil
 }

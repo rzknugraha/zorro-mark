@@ -12,6 +12,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-playground/validator"
 	gorillaContext "github.com/gorilla/context"
+	"github.com/gorilla/mux"
 	"github.com/rzknugraha/zorro-mark/helpers"
 	"github.com/rzknugraha/zorro-mark/models"
 	"github.com/rzknugraha/zorro-mark/services"
@@ -170,4 +171,74 @@ func (c *DocumentController) UpdateDocument(res http.ResponseWriter, req *http.R
 	helpers.DirectResponse(res, http.StatusOK, result)
 
 	return
+}
+
+// GetSingleDocument is
+func (c *DocumentController) GetSingleDocument(res http.ResponseWriter, req *http.Request) {
+	UserInfo, _ := gorillaContext.Get(req, "UserInfo").(jwt.MapClaims)
+
+	IDUser := fmt.Sprintf("%v", UserInfo["id"])
+	Name := fmt.Sprintf("%v", UserInfo["name"])
+	NIP := fmt.Sprintf("%v", UserInfo["nip"])
+
+	intIDUser, err := strconv.Atoi(IDUser)
+	if err != nil {
+		return
+	}
+
+	userData := models.Shortuser{
+		Name: Name,
+		Nip:  NIP,
+		ID:   intIDUser,
+	}
+	IDDoc := mux.Vars(req)["IDDoc"]
+
+	intIDDoc, err := strconv.Atoi(IDDoc)
+	if err != nil {
+		return
+	}
+
+	data, err := c.DocumentService.GetSingleDocByUser(req.Context(), intIDDoc, userData)
+	if err != nil {
+		return
+	}
+
+	helpers.DirectResponse(res, http.StatusOK, data)
+	return
+
+}
+
+// GetDocActivity is
+func (c *DocumentController) GetDocActivity(res http.ResponseWriter, req *http.Request) {
+	UserInfo, _ := gorillaContext.Get(req, "UserInfo").(jwt.MapClaims)
+
+	IDUser := fmt.Sprintf("%v", UserInfo["id"])
+	Name := fmt.Sprintf("%v", UserInfo["name"])
+	NIP := fmt.Sprintf("%v", UserInfo["nip"])
+
+	intIDUser, err := strconv.Atoi(IDUser)
+	if err != nil {
+		return
+	}
+
+	userData := models.Shortuser{
+		Name: Name,
+		Nip:  NIP,
+		ID:   intIDUser,
+	}
+	IDDoc := mux.Vars(req)["IDDoc"]
+
+	intIDDoc, err := strconv.Atoi(IDDoc)
+	if err != nil {
+		return
+	}
+
+	data, err := c.DocumentService.GetActivityDoc(req.Context(), intIDDoc, userData)
+	if err != nil {
+		return
+	}
+
+	helpers.DirectResponse(res, http.StatusOK, data)
+	return
+
 }
