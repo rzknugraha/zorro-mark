@@ -35,6 +35,7 @@ func (r *Route) Init() *mux.Router {
 	ClientAuth.HandleFunc("/file/upload", uploadController.Upload).Methods("POST")
 	ClientAuth.HandleFunc("/file/get/{filename}", uploadController.GetFile).Methods("GET")
 	ClientAuth.HandleFunc("/document/get", documentController.GetDocuments).Methods("GET")
+	ClientAuth.HandleFunc("/document/update", documentController.UpdateDocument).Methods("POST")
 
 	return v1
 }

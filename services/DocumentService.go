@@ -14,6 +14,7 @@ import (
 // IDocumentService is
 type IDocumentService interface {
 	GetDocumentUser(ctx context.Context, filter models.DocumentUserFilter, page helpers.PageReq) (res *helpers.Paginate, err error)
+	UpdateDocumentAttributte(ctx context.Context, filter models.UpdateDocReq) (res *helpers.JSONResponse, err error)
 }
 
 // DocumentService is
@@ -96,7 +97,7 @@ func (s *DocumentService) GetDocumentUser(ctx context.Context, filter models.Doc
 }
 
 //UpdateDocumentAttributte update document only attribute
-func (s *DocumentService) UpdateDocumentAttributte(ctx context.Context, filter models.UpdateDocReq, page helpers.PageReq) (res *helpers.JSONResponse, err error) {
+func (s *DocumentService) UpdateDocumentAttributte(ctx context.Context, filter models.UpdateDocReq) (res *helpers.JSONResponse, err error) {
 
 	payload := map[string]interface{}{
 		filter.FieldType: filter.FieldValue,
@@ -113,11 +114,13 @@ func (s *DocumentService) UpdateDocumentAttributte(ctx context.Context, filter m
 	}
 	defer tx.RollbackUnlessCommitted()
 
-	if filter.FieldValue == "signed" {
+	var affect int64
+
+	if filter.FieldType == "signed" {
 		condition := map[string]interface{}{
 			"document_id": filter.DocumentID,
 		}
-		err = s.DocumentUserRepository.UpdateDocUsers(ctx, tx, condition, payload)
+		affect, err = s.DocumentUserRepository.UpdateDocUsers(ctx, tx, condition, payload)
 		if err != nil {
 			logrus.WithFields(logrus.Fields{
 				"code":  5500,
@@ -131,7 +134,8 @@ func (s *DocumentService) UpdateDocumentAttributte(ctx context.Context, filter m
 			"user_id":     filter.UserID,
 			"document_id": filter.DocumentID,
 		}
-		err = s.DocumentUserRepository.UpdateDocUsers(ctx, tx, condition, payload)
+		affect, err = s.DocumentUserRepository.UpdateDocUsers(ctx, tx, condition, payload)
+
 		if err != nil {
 			logrus.WithFields(logrus.Fields{
 				"code":  5500,
@@ -144,10 +148,20 @@ func (s *DocumentService) UpdateDocumentAttributte(ctx context.Context, filter m
 
 	tx.Commit()
 
-	return &helpers.JSONResponse{
-		Code:    2200,
-		Message: "Success",
-		Data:    nil,
-	}, nil
+	var response *helpers.JSONResponse
+	if affect > 0 {
 
+		response = &helpers.JSONResponse{
+			Code:    2200,
+			Message: "Success",
+			Data:    nil,
+		}
+	} else {
+		response = &helpers.JSONResponse{
+			Code:    4400,
+			Message: "Failed to update or Document not found",
+			Data:    nil,
+		}
+	}
+	return response, nil
 }
