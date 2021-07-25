@@ -8,6 +8,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"mime/multipart"
 	"net/http"
@@ -97,6 +98,14 @@ func (r *EsignRepository) PostEsign(ctx context.Context, values map[string]io.Re
 	}
 	fmt.Println("rsp")
 	fmt.Println(rsp)
+
+	defer rsp.Body.Close()
+
+	fmt.Println("response Status:", rsp.Status)
+	fmt.Println("response Headers:", rsp.Header)
+	body, _ := ioutil.ReadAll(rsp.Body)
+	fmt.Println("response Body:", string(body))
+
 	if rsp.StatusCode != http.StatusOK {
 		logrus.WithFields(logrus.Fields{
 			"code":  5500,
