@@ -75,7 +75,7 @@ func (r *EsignRepository) PostEsign(ctx context.Context, values map[string]io.Re
 	}
 
 	w.Close()
-	req, err := http.NewRequest("POST", "192.168.1.31/api/sign/pdf", &b)
+	req, err := http.NewRequest("POST", "http://192.168.1.31/api/sign/pdf", &b)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"code":  5500,
@@ -86,7 +86,15 @@ func (r *EsignRepository) PostEsign(ctx context.Context, values map[string]io.Re
 	}
 	req.Header.Set("Content-Type", w.FormDataContentType())
 	req.SetBasicAuth("admin", "qwerty")
-	rsp, _ := client.Do(req)
+	rsp, err := client.Do(req)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": err,
+			"data":  values,
+		}).Error("[REPO PostEsign] error make client do")
+		return err
+	}
 	fmt.Println("rsp")
 	fmt.Println(rsp)
 	if rsp.StatusCode != http.StatusOK {
