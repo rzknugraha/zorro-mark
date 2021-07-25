@@ -98,6 +98,11 @@ func (r *EsignRepository) PostEsign(ctx context.Context, values map[string]io.Re
 	fmt.Println("rsp")
 	fmt.Println(rsp)
 	if rsp.StatusCode != http.StatusOK {
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": err,
+			"data":  rsp.Body,
+		}).Error("[REPO PostEsign] error make client do")
 		log.Printf("Request failed with response code: %d", rsp.StatusCode)
 	}
 	return nil
