@@ -27,7 +27,7 @@ type BsreReq struct {
 
 //EsignReq data struct
 type EsignReq struct {
-	DocumentID string `json:"document_id"`
+	DocumentID int    `json:"document_id"`
 	FilePath   string `json:"file_path"`
 	ImagePath  string `json:"image_path"`
 	NIK        string `json:"nik"`
