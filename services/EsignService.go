@@ -2,10 +2,7 @@ package services
 
 import (
 	"context"
-	"fmt"
-	"io"
 	"os"
-	"strings"
 
 	"github.com/rzknugraha/zorro-mark/helpers"
 	"github.com/rzknugraha/zorro-mark/infrastructures"
@@ -47,20 +44,7 @@ func InitEsignService() *EsignService {
 // PostSign is
 func (s *EsignService) PostSign(ctx context.Context, dataSign models.EsignReq) (Response *helpers.JSONResponse, err error) {
 
-	//prepare the reader instances to encode
-	values := map[string]io.Reader{
-		"file":       mustOpen(dataSign.FilePath), // lets assume its this file
-		"nik":        strings.NewReader(dataSign.NIK),
-		"passphrase": strings.NewReader(dataSign.Passphrase),
-		"image":      strings.NewReader(dataSign.Image),
-		"linkQR":     strings.NewReader(dataSign.LinkQR),
-		"tampilan":   strings.NewReader(dataSign.Tampilan),
-	}
-
-	fmt.Println("values")
-	fmt.Println(values)
-
-	err = s.EsignRepository.PostEsign(ctx, values)
+	err = s.EsignRepository.PostEsign(ctx, dataSign)
 	if err != nil {
 		return nil, err
 	}

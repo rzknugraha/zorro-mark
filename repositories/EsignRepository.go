@@ -16,12 +16,13 @@ import (
 	"time"
 
 	"github.com/rzknugraha/zorro-mark/infrastructures"
+	"github.com/rzknugraha/zorro-mark/models"
 	"github.com/sirupsen/logrus"
 )
 
 // IEsignRepository is
 type IEsignRepository interface {
-	PostEsign(ctx context.Context, values map[string]io.Reader) (err error)
+	PostEsign(ctx context.Context, dataSign models.EsignReq) (err error)
 }
 
 // EsignRepository is
@@ -30,69 +31,62 @@ type EsignRepository struct {
 }
 
 // PostEsign post to bsre
-func (r *EsignRepository) PostEsign(ctx context.Context, values map[string]io.Reader) (err error) {
+func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignReq) (err error) {
 
 	client := &http.Client{
 		Timeout: time.Second * 10,
 	}
 
-	var b bytes.Buffer
-	w := multipart.NewWriter(&b)
-	for key, r := range values {
-		var fw io.Writer
-		if x, ok := r.(io.Closer); ok {
-			defer x.Close()
-		}
-		// Add an image file
-		if x, ok := r.(*os.File); ok {
-			if fw, err = w.CreateFormFile(key, x.Name()); err != nil {
-				logrus.WithFields(logrus.Fields{
-					"code":  5500,
-					"error": err,
-					"data":  values,
-				}).Error("[REPO PostEsign] error create form file")
-				return
-			}
-		} else {
-			// Add other fields
-			if fw, err = w.CreateFormField(key); err != nil {
-				logrus.WithFields(logrus.Fields{
-					"code":  5500,
-					"error": err,
-					"data":  values,
-				}).Error("[REPO PostEsign] error create form file another field")
-				return
-			}
-		}
-		if _, err = io.Copy(fw, r); err != nil {
-			logrus.WithFields(logrus.Fields{
-				"code":  5500,
-				"error": err,
-				"data":  values,
-			}).Error("[REPO PostEsign] error copy form file")
-			return err
-		}
+	payload := &bytes.Buffer{}
+	writer := multipart.NewWriter(payload)
 
+	file, errFile1 := os.Open("/Z:/mastono/public/file/surat-keluar/before-sign/126.pdf")
+	defer file.Close()
+	part1,
+		errFile1 := writer.CreateFormFile("file", "."+dataSign.FilePath)
+	_, errFile1 = io.Copy(part1, file)
+	if errFile1 != nil {
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": errFile1,
+			"data":  dataSign,
+		}).Error("[REPO PostEsign] error post data")
+		return
 	}
 
-	w.Close()
-	req, err := http.NewRequest("POST", "http://192.168.1.31/api/sign/pdf", &b)
+	_ = writer.WriteField("nik", dataSign.NIK)
+	_ = writer.WriteField("passphrase", dataSign.Passphrase)
+	_ = writer.WriteField("tampilan", dataSign.Tampilan)
+	// _ = writer.WriteField("page", dataSign.Page)
+	// _ = writer.WriteField("image", dataSign.Image)
+	// _ = writer.WriteField("width", dataSign.Width)
+	// _ = writer.WriteField("height", dataSign.Height)
+	err = writer.Close()
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"code":  5500,
 			"error": err,
-			"data":  values,
+			"data":  dataSign,
+		}).Error("[REPO PostEsign] error post data")
+		return
+	}
+	req, err := http.NewRequest("POST", "http://192.168.1.31/api/sign/pdf", payload)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": err,
+			"data":  dataSign,
 		}).Error("[REPO PostEsign] error post data")
 		return err
 	}
-	req.Header.Set("Content-Type", w.FormDataContentType())
+	req.Header.Set("Content-Type", writer.FormDataContentType())
 	req.SetBasicAuth("admin", "qwerty")
 	rsp, err := client.Do(req)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"code":  5500,
 			"error": err,
-			"data":  values,
+			"data":  dataSign,
 		}).Error("[REPO PostEsign] error make client do")
 		return err
 	}
