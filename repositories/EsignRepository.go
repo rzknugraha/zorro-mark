@@ -13,7 +13,6 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/rzknugraha/zorro-mark/infrastructures"
@@ -46,7 +45,7 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 	fmt.Println("file")
 	defer file.Close()
 	part1,
-		errFile1 := writer.CreateFormFile("file", filepath.Base("."+dataSign.FilePath))
+		errFile1 := writer.CreateFormFile("file", "."+dataSign.FilePath)
 	_, errFile1 = io.Copy(part1, file)
 	if errFile1 != nil {
 		logrus.WithFields(logrus.Fields{
