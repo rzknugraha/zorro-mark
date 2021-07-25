@@ -165,7 +165,7 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 	path := viper.GetString("storage.path")
 
 	fileResp := models.UploadResp{
-		FileName: fmt.Sprintf("%s-signed", fi.Name()),
+		FileName: fmt.Sprintf("signed-%s", fi.Name()),
 	}
 
 	fullPath := fmt.Sprintf("/%s/signed/%s", path, fileResp.FileName)
