@@ -42,9 +42,11 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 	writer := multipart.NewWriter(payload)
 
 	file, errFile1 := os.Open("." + dataSign.FilePath)
+	fmt.Println(file)
+	fmt.Println("file")
 	defer file.Close()
 	part1,
-		errFile1 := writer.CreateFormFile("file", filepath.Base(dataSign.FilePath))
+		errFile1 := writer.CreateFormFile("file", filepath.Base("."+dataSign.FilePath))
 	_, errFile1 = io.Copy(part1, file)
 	if errFile1 != nil {
 		logrus.WithFields(logrus.Fields{
@@ -55,6 +57,8 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 		return
 	}
 
+	fmt.Println("part1")
+	fmt.Println(part1)
 	_ = writer.WriteField("nik", dataSign.NIK)
 	_ = writer.WriteField("passphrase", dataSign.Passphrase)
 	_ = writer.WriteField("tampilan", dataSign.Tampilan)
