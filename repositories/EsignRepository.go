@@ -40,7 +40,7 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 	payload := &bytes.Buffer{}
 	writer := multipart.NewWriter(payload)
 
-	file, errFile1 := os.Open("/Z:/mastono/public/file/surat-keluar/before-sign/126.pdf")
+	file, errFile1 := os.Open("." + dataSign.FilePath)
 	defer file.Close()
 	part1,
 		errFile1 := writer.CreateFormFile("file", "."+dataSign.FilePath)
@@ -50,7 +50,7 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 			"code":  5500,
 			"error": errFile1,
 			"data":  dataSign,
-		}).Error("[REPO PostEsign] error post data")
+		}).Error("[REPO PostEsign] create from data")
 		return
 	}
 
@@ -67,7 +67,7 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 			"code":  5500,
 			"error": err,
 			"data":  dataSign,
-		}).Error("[REPO PostEsign] error post data")
+		}).Error("[REPO PostEsign] error close writter")
 		return
 	}
 	req, err := http.NewRequest("POST", "http://192.168.1.31/api/sign/pdf", payload)
