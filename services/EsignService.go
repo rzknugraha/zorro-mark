@@ -75,7 +75,7 @@ func (s *EsignService) PostSign(ctx context.Context, dataSign models.EsignReq) (
 		defer tx.RollbackUnlessCommitted()
 
 		condition := map[string]interface{}{
-			"document_id": dataSign.DocumentID,
+			"id": dataSign.DocumentID,
 		}
 		payload := map[string]interface{}{
 			"signed": 1,
