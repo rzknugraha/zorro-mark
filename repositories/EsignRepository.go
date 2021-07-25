@@ -56,7 +56,7 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 		return
 	}
 	partHeader := textproto.MIMEHeader{}
-	disp := fmt.Sprintf("form-data; name=data; file=%s", fi.Name())
+	disp := fmt.Sprintf("form-data; name=file; filename=%s", fi.Name())
 	partHeader.Add("Content-Disposition", disp)
 	partHeader.Add("Content-Type", "application/pdf")
 	part1, errFile1 := writer.CreatePart(partHeader)
