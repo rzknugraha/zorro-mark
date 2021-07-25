@@ -45,6 +45,7 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 	defer file.Close()
 
 	fi, err := file.Stat()
+
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"code":  5500,
@@ -53,8 +54,7 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 		}).Error("[REPO PostEsign] error get file stats")
 		return
 	}
-	part1,
-		errFile1 := writer.CreateFormFile("file", fi.Name())
+	part1, errFile1 := writer.CreateFormFile("file", fi.Name())
 	_, errFile1 = io.Copy(part1, file)
 	if errFile1 != nil {
 		logrus.WithFields(logrus.Fields{
@@ -85,6 +85,8 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 		return
 	}
 
+	// application/pdf
+
 	req, err := http.NewRequest("POST", "http://192.168.1.31/api/sign/pdf", payload)
 
 	if err != nil {
@@ -99,6 +101,9 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 
 	req.SetBasicAuth("admin", "qwerty")
 
+	fmt.Println("req")
+	fmt.Println(req)
+
 	rsp, err := client.Do(req)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
@@ -110,9 +115,6 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 	}
 	fmt.Println("rsp")
 	fmt.Println(rsp)
-
-	fmt.Println("req")
-	fmt.Println(req)
 
 	defer rsp.Body.Close()
 
