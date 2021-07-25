@@ -12,6 +12,7 @@ import (
 	"log"
 	"mime/multipart"
 	"net/http"
+	"net/textproto"
 	"os"
 	"time"
 
@@ -54,7 +55,13 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 		}).Error("[REPO PostEsign] error get file stats")
 		return
 	}
-	part1, errFile1 := writer.CreateFormFile("file", fi.Name())
+	partHeader := textproto.MIMEHeader{}
+	disp := fmt.Sprintf("form-data; name=data; filename=%s", fi.Name())
+	partHeader.Add("Content-Disposition", disp)
+	partHeader.Add("Content-Type", "application/pdf")
+	part1, errFile1 := writer.CreatePart(partHeader)
+
+	// part1, errFile1 := writer.CreateFormFile("file", fi.Name())
 	_, errFile1 = io.Copy(part1, file)
 	if errFile1 != nil {
 		logrus.WithFields(logrus.Fields{
@@ -64,9 +71,6 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 		}).Error("[REPO PostEsign] error get file not founf")
 		return
 	}
-
-	fmt.Println("fi name")
-	fmt.Println(fi.Name())
 
 	_ = writer.WriteField("nik", dataSign.NIK)
 	_ = writer.WriteField("passphrase", dataSign.Passphrase)
@@ -85,6 +89,8 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 		return
 	}
 
+	fmt.Println("part1")
+	fmt.Println(part1)
 	// application/pdf
 
 	req, err := http.NewRequest("POST", "http://192.168.1.31/api/sign/pdf", payload)
@@ -98,12 +104,11 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 		return err
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
-	req.Header.Set("Content-Type", "application/pdf")
 
 	req.SetBasicAuth("admin", "qwerty")
 
-	fmt.Println("content")
-	fmt.Println(writer.FormDataContentType())
+	fmt.Println("req")
+	fmt.Println(req)
 
 	rsp, err := client.Do(req)
 	if err != nil {
