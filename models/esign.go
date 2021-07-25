@@ -27,6 +27,7 @@ type BsreReq struct {
 
 //EsignReq data struct
 type EsignReq struct {
+	DocumentID string `json:"document_id"`
 	FilePath   string `json:"file_path"`
 	ImagePath  string `json:"image_path"`
 	NIK        string `json:"nik"`
@@ -49,5 +50,6 @@ type EsignReq struct {
 //EsignResp respon from bsre
 type EsignResp struct {
 	StatusCode int    `json:"status_code"`
-	Message    string `json:"message"`
+	Error      string `json:"error"`
+	PathFile   string `json:"path_file"`
 }

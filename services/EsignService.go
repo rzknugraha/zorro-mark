@@ -9,6 +9,7 @@ import (
 	"github.com/rzknugraha/zorro-mark/infrastructures"
 	"github.com/rzknugraha/zorro-mark/models"
 	"github.com/rzknugraha/zorro-mark/repositories"
+	"github.com/sirupsen/logrus"
 )
 
 // IEsignService is
@@ -52,15 +53,47 @@ func (s *EsignService) PostSign(ctx context.Context, dataSign models.EsignReq) (
 	if res.StatusCode != http.StatusOK {
 		response = &helpers.JSONResponse{
 			Code:    4400,
-			Message: res.Message,
+			Message: res.Error,
 			Data:    nil,
 		}
 	} else {
 		response = &helpers.JSONResponse{
 			Code:    2200,
-			Message: res.Message,
+			Message: "success",
 			Data:    nil,
 		}
+
+		tx, err1 := s.DocumentRepository.Tx()
+		if err1 != nil {
+			logrus.WithFields(logrus.Fields{
+				"code":  5500,
+				"error": err,
+				"data":  nil,
+			}).Error("[Service PostSign] error init tx")
+			return nil, err1
+		}
+		defer tx.RollbackUnlessCommitted()
+
+		condition := map[string]interface{}{
+			"document_id": dataSign.DocumentID,
+		}
+		payload := map[string]interface{}{
+			"signed": 1,
+			"path":   res.PathFile,
+		}
+
+		_, err1 = s.DocumentRepository.UpdateDoc(ctx, tx, condition, payload)
+		if err1 != nil {
+			logrus.WithFields(logrus.Fields{
+				"code":  5500,
+				"error": err,
+				"data":  nil,
+			}).Error("[Service PostSign] error update doc signed")
+			return nil, err1
+		}
+
+		tx.Commit()
+
 	}
 	return
 }

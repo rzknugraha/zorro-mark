@@ -6,6 +6,7 @@ import (
 
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -18,6 +19,7 @@ import (
 	"github.com/rzknugraha/zorro-mark/infrastructures"
 	"github.com/rzknugraha/zorro-mark/models"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 // IEsignRepository is
@@ -129,16 +131,24 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 	body, _ := ioutil.ReadAll(rsp.Body)
 	fmt.Println("response Body:", string(body))
 
-	result.StatusCode = rsp.StatusCode
-	result.Message = string(body)
-
 	if rsp.StatusCode != http.StatusOK {
+		err = json.Unmarshal(body, &result)
+		if err != nil {
 
+			logrus.WithFields(logrus.Fields{
+				"code":  5500,
+				"error": err,
+				"data":  body,
+			}).Error("[REPO PostEsign] error unmarshall ")
+
+			return
+		}
 		if rsp.StatusCode == http.StatusBadRequest {
+
 			logrus.WithFields(logrus.Fields{
 				"code":  4400,
 				"error": err,
-				"data":  rsp.Body,
+				"data":  body,
 			}).Error("[REPO PostEsign] error make client do")
 
 		} else {
@@ -146,11 +156,42 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 			logrus.WithFields(logrus.Fields{
 				"code":  5500,
 				"error": err,
-				"data":  rsp.Body,
+				"data":  body,
 			}).Error("[REPO PostEsign] error make client do")
 		}
 
 	}
+
+	path := viper.GetString("storage.path")
+
+	fileResp := models.UploadResp{
+		FileName: fmt.Sprintf("%s-signed", fi.Name()),
+	}
+
+	fullPath := fmt.Sprintf("/%s/signed/%s", path, fileResp.FileName)
+
+	dst, err := os.Create("." + fullPath)
+	if err != nil {
+		return
+
+	}
+
+	defer dst.Close()
+	// Copy the uploaded file to the filesystem
+	// at the specified destination
+	_, err = io.Copy(dst, rsp.Body)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": err,
+			"data":  body,
+		}).Error("[REPO PostEsign] error move file signed")
+		return
+	}
+
+	result.StatusCode = 200
+	result.PathFile = fullPath
+
 	return
 
 }
