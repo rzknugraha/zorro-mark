@@ -126,9 +126,9 @@ func (s *DocumentService) UpdateDocumentAttributte(ctx context.Context, filter m
 
 	if filter.FieldType == "signed" {
 		condition := map[string]interface{}{
-			"document_id": filter.DocumentID,
+			"id": filter.DocumentID,
 		}
-		affect, err = s.DocumentUserRepository.UpdateDocUsers(ctx, tx, condition, payload)
+		affect, err = s.DocumentRepository.UpdateDoc(ctx, tx, condition, payload)
 		if err != nil {
 			logrus.WithFields(logrus.Fields{
 				"code":  5500,
