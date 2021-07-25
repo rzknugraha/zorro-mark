@@ -54,6 +54,7 @@ func (s *EsignService) PostSign(ctx context.Context, dataSign models.EsignReq) (
 		"passphrase": strings.NewReader(dataSign.Passphrase),
 		"image":      strings.NewReader(dataSign.Image),
 		"linkQR":     strings.NewReader(dataSign.LinkQR),
+		"tampilan":   strings.NewReader(dataSign.Tampilan),
 	}
 
 	fmt.Println("values")
