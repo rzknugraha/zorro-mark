@@ -13,6 +13,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/rzknugraha/zorro-mark/infrastructures"
@@ -43,14 +44,14 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 	file, errFile1 := os.Open("." + dataSign.FilePath)
 	defer file.Close()
 	part1,
-		errFile1 := writer.CreateFormFile("file", "."+dataSign.FilePath)
+		errFile1 := writer.CreateFormFile("file", filepath.Base(dataSign.FilePath))
 	_, errFile1 = io.Copy(part1, file)
 	if errFile1 != nil {
 		logrus.WithFields(logrus.Fields{
 			"code":  5500,
 			"error": errFile1,
 			"data":  dataSign,
-		}).Error("[REPO PostEsign] create from data")
+		}).Error("[REPO PostEsign] error get file not founf")
 		return
 	}
 
@@ -80,7 +81,9 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 		return err
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
+
 	req.SetBasicAuth("admin", "qwerty")
+
 	rsp, err := client.Do(req)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
