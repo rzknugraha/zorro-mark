@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"net/http"
 	"os"
 
 	"github.com/rzknugraha/zorro-mark/helpers"
@@ -42,13 +43,25 @@ func InitEsignService() *EsignService {
 }
 
 // PostSign is
-func (s *EsignService) PostSign(ctx context.Context, dataSign models.EsignReq) (Response *helpers.JSONResponse, err error) {
+func (s *EsignService) PostSign(ctx context.Context, dataSign models.EsignReq) (response *helpers.JSONResponse, err error) {
 
-	err = s.EsignRepository.PostEsign(ctx, dataSign)
+	res, err := s.EsignRepository.PostEsign(ctx, dataSign)
 	if err != nil {
 		return nil, err
 	}
-
+	if res.StatusCode != http.StatusOK {
+		response = &helpers.JSONResponse{
+			Code:    4400,
+			Message: res.Message,
+			Data:    nil,
+		}
+	} else {
+		response = &helpers.JSONResponse{
+			Code:    2200,
+			Message: res.Message,
+			Data:    nil,
+		}
+	}
 	return
 }
 

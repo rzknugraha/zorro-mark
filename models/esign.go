@@ -45,3 +45,9 @@ type EsignReq struct {
 	Location   string `json:"location"`
 	Text       string `json:"text"`
 }
+
+//EsignResp respon from bsre
+type EsignResp struct {
+	StatusCode int    `json:"status_code"`
+	Message    string `json:"message"`
+}

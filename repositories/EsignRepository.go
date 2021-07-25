@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"mime/multipart"
 	"net/http"
 	"net/textproto"
@@ -23,7 +22,7 @@ import (
 
 // IEsignRepository is
 type IEsignRepository interface {
-	PostEsign(ctx context.Context, dataSign models.EsignReq) (err error)
+	PostEsign(ctx context.Context, dataSign models.EsignReq) (result models.EsignResp, err error)
 }
 
 // EsignRepository is
@@ -32,7 +31,7 @@ type EsignRepository struct {
 }
 
 // PostEsign post to bsre
-func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignReq) (err error) {
+func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignReq) (result models.EsignResp, err error) {
 
 	client := &http.Client{
 		Timeout: time.Second * 10,
@@ -72,7 +71,8 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 		return
 	}
 
-	_ = writer.WriteField("nik", dataSign.NIK)
+	// _ = writer.WriteField("nik", dataSign.NIK)
+	_ = writer.WriteField("nik", "0803202100007062")
 	_ = writer.WriteField("passphrase", dataSign.Passphrase)
 	_ = writer.WriteField("tampilan", dataSign.Tampilan)
 	// _ = writer.WriteField("page", dataSign.Page)
@@ -101,7 +101,7 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 			"error": err,
 			"data":  dataSign,
 		}).Error("[REPO PostEsign] error post data")
-		return err
+		return
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
@@ -117,7 +117,7 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 			"error": err,
 			"data":  dataSign,
 		}).Error("[REPO PostEsign] error make client do")
-		return err
+		return
 	}
 	fmt.Println("rsp")
 	fmt.Println(rsp)
@@ -129,14 +129,28 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 	body, _ := ioutil.ReadAll(rsp.Body)
 	fmt.Println("response Body:", string(body))
 
+	result.StatusCode = rsp.StatusCode
+	result.Message = string(body)
+
 	if rsp.StatusCode != http.StatusOK {
-		logrus.WithFields(logrus.Fields{
-			"code":  5500,
-			"error": err,
-			"data":  rsp.Body,
-		}).Error("[REPO PostEsign] error make client do")
-		log.Printf("Request failed with response code: %d", rsp.StatusCode)
+
+		if rsp.StatusCode == http.StatusBadRequest {
+			logrus.WithFields(logrus.Fields{
+				"code":  4400,
+				"error": err,
+				"data":  rsp.Body,
+			}).Error("[REPO PostEsign] error make client do")
+
+		} else {
+
+			logrus.WithFields(logrus.Fields{
+				"code":  5500,
+				"error": err,
+				"data":  rsp.Body,
+			}).Error("[REPO PostEsign] error make client do")
+		}
+
 	}
-	return nil
+	return
 
 }
