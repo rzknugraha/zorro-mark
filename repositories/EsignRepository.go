@@ -99,6 +99,9 @@ func (r *EsignRepository) PostEsign(ctx context.Context, values map[string]io.Re
 	fmt.Println("rsp")
 	fmt.Println(rsp)
 
+	fmt.Println("req")
+	fmt.Println(req)
+
 	defer rsp.Body.Close()
 
 	fmt.Println("response Status:", rsp.Status)
