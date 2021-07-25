@@ -98,11 +98,12 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 		return err
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
+	req.Header.Set("Content-Type", "application/pdf")
 
 	req.SetBasicAuth("admin", "qwerty")
 
-	fmt.Println("req")
-	fmt.Println(req)
+	fmt.Println("content")
+	fmt.Println(writer.FormDataContentType())
 
 	rsp, err := client.Do(req)
 	if err != nil {
