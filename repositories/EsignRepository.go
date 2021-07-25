@@ -41,11 +41,20 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 	writer := multipart.NewWriter(payload)
 
 	file, errFile1 := os.Open("." + dataSign.FilePath)
-	fmt.Println(file)
-	fmt.Println("file")
+
 	defer file.Close()
+
+	fi, err := file.Stat()
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": errFile1,
+			"data":  dataSign,
+		}).Error("[REPO PostEsign] error get file stats")
+		return
+	}
 	part1,
-		errFile1 := writer.CreateFormFile("file", "."+dataSign.FilePath)
+		errFile1 := writer.CreateFormFile("file", fi.Name())
 	_, errFile1 = io.Copy(part1, file)
 	if errFile1 != nil {
 		logrus.WithFields(logrus.Fields{
@@ -56,8 +65,9 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 		return
 	}
 
-	fmt.Println("part1")
-	fmt.Println(part1)
+	fmt.Println("fi name")
+	fmt.Println(fi.Name())
+
 	_ = writer.WriteField("nik", dataSign.NIK)
 	_ = writer.WriteField("passphrase", dataSign.Passphrase)
 	_ = writer.WriteField("tampilan", dataSign.Tampilan)
@@ -74,7 +84,9 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 		}).Error("[REPO PostEsign] error close writter")
 		return
 	}
+
 	req, err := http.NewRequest("POST", "http://192.168.1.31/api/sign/pdf", payload)
+
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"code":  5500,
