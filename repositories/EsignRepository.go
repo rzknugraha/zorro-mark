@@ -159,6 +159,8 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 			}).Error("[REPO PostEsign] error make client do")
 		}
 
+		return
+
 	}
 
 	path := viper.GetString("storage.path")
