@@ -50,6 +50,8 @@ func (c *EsignController) SignDoc(res http.ResponseWriter, req *http.Request) {
 	IDUser := fmt.Sprintf("%v", UserInfo["id"])
 	Name := fmt.Sprintf("%v", UserInfo["name"])
 	NIP := fmt.Sprintf("%v", UserInfo["nip"])
+	SignFile := fmt.Sprintf("%v", UserInfo["sign_file"])
+	IdentityNO := fmt.Sprintf("%v", UserInfo["identity_no"])
 
 	intIDUser, err := strconv.Atoi(IDUser)
 	if err != nil {
@@ -57,9 +59,11 @@ func (c *EsignController) SignDoc(res http.ResponseWriter, req *http.Request) {
 	}
 
 	userData := models.Shortuser{
-		Name: Name,
-		Nip:  NIP,
-		ID:   intIDUser,
+		Name:       Name,
+		Nip:        NIP,
+		ID:         intIDUser,
+		IdentityNO: IdentityNO,
+		SignFile:   SignFile,
 	}
 
 	fmt.Println(userData)
@@ -102,8 +106,10 @@ func (c *EsignController) SignDoc(res http.ResponseWriter, req *http.Request) {
 		})
 		return
 	}
+	dataReq.NIK = userData.IdentityNO
+	dataReq.ImagePath = userData.SignFile
 
-	result, err := c.EsignService.PostSign(req.Context(), dataReq)
+	result, err := c.EsignService.PostSign(req.Context(), dataReq, userData)
 	if err != nil {
 		responseErr := &helpers.JSONResponse{
 			Code:    5500,

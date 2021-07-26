@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"net/textproto"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/rzknugraha/zorro-mark/infrastructures"
@@ -47,7 +48,6 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 	defer file.Close()
 
 	fi, err := file.Stat()
-
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"code":  5500,
@@ -56,6 +56,13 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 		}).Error("[REPO PostEsign] error get file stats")
 		return
 	}
+
+	path := viper.GetString("storage.path")
+	fileResp := models.UploadResp{
+		FileName: fmt.Sprintf("signed-%s", fi.Name()),
+	}
+	fullPath := fmt.Sprintf("/%s/signed/%s", path, fileResp.FileName)
+
 	partHeader := textproto.MIMEHeader{}
 	disp := fmt.Sprintf("form-data; name=file; filename=%s", fi.Name())
 	partHeader.Add("Content-Disposition", disp)
@@ -73,11 +80,35 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 		return
 	}
 
+	//using QR or Image
+	if dataSign.Tampilan == "visible" {
+		strPage := strconv.Itoa(dataSign.Page)
+		strXAxis := strconv.Itoa(dataSign.XAxis)
+		strYAxis := strconv.Itoa(dataSign.YAxis)
+		strWidth := strconv.Itoa(dataSign.Width)
+		strHeight := strconv.Itoa(dataSign.Height)
+
+		_ = writer.WriteField("page", strPage)
+
+		_ = writer.WriteField("xAxis", strXAxis)
+		_ = writer.WriteField("yAxis", strYAxis)
+		_ = writer.WriteField("width", strWidth)
+		_ = writer.WriteField("height", strHeight)
+
+		if dataSign.Image == true {
+			_ = writer.WriteField("image", "true")
+
+		} else {
+			_ = writer.WriteField("image", "false")
+			_ = writer.WriteField("linkQR", viper.GetString("static_file")+fullPath)
+		}
+	}
+
 	// _ = writer.WriteField("nik", dataSign.NIK)
 	_ = writer.WriteField("nik", "0803202100007062")
 	_ = writer.WriteField("passphrase", dataSign.Passphrase)
 	_ = writer.WriteField("tampilan", dataSign.Tampilan)
-	// _ = writer.WriteField("page", dataSign.Page)
+	//
 	// _ = writer.WriteField("image", dataSign.Image)
 	// _ = writer.WriteField("width", dataSign.Width)
 	// _ = writer.WriteField("height", dataSign.Height)
@@ -162,14 +193,6 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 		return
 
 	}
-
-	path := viper.GetString("storage.path")
-
-	fileResp := models.UploadResp{
-		FileName: fmt.Sprintf("signed-%s", fi.Name()),
-	}
-
-	fullPath := fmt.Sprintf("/%s/signed/%s", path, fileResp.FileName)
 
 	dst, err := os.Create("." + fullPath)
 	if err != nil {

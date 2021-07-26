@@ -27,24 +27,18 @@ type BsreReq struct {
 
 //EsignReq data struct
 type EsignReq struct {
-	DocumentID int    `json:"document_id"`
+	DocumentID int    `json:"document_id" validate:"required"`
 	FilePath   string `json:"file_path"`
 	ImagePath  string `json:"image_path"`
 	NIK        string `json:"nik"`
-	Passphrase string `json:"passphrase"`
-	Tampilan   string `json:"tampilan"`
-	Halaman    int    `json:"halaman"`
+	Passphrase string `json:"passphrase" validate:"required"`
+	Tampilan   string `json:"tampilan" validate:"required,oneof=invisible visible"`
 	Page       int    `json:"page"`
-	Image      string `json:"image"`
-	LinkQR     string `json:"linkQR"`
+	Image      bool   `json:"image"`
 	XAxis      int    `json:"x_axis"`
 	YAxis      int    `json:"y_axis"`
 	Width      int    `json:"width"`
 	Height     int    `json:"height"`
-	Tag        string `json:"tag"`
-	Reason     string `json:"reason"`
-	Location   string `json:"location"`
-	Text       string `json:"text"`
 }
 
 //EsignResp respon from bsre

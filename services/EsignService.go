@@ -14,15 +14,16 @@ import (
 
 // IEsignService is
 type IEsignService interface {
-	PostSign(ctx context.Context, dataSign models.EsignReq) (Response *helpers.JSONResponse, err error)
+	PostSign(ctx context.Context, dataSign models.EsignReq, dataUser models.Shortuser) (Response *helpers.JSONResponse, err error)
 }
 
 // EsignService is
 type EsignService struct {
-	DocumentRepository     repositories.IDocumentsRepository
-	DocumentUserRepository repositories.IDocumentUserRepository
-	EsignRepository        repositories.IEsignRepository
-	DB                     infrastructures.ISQLConnection
+	DocumentRepository         repositories.IDocumentsRepository
+	DocumentUserRepository     repositories.IDocumentUserRepository
+	DocumentActivityRepository repositories.IDocumentActivityRepository
+	EsignRepository            repositories.IEsignRepository
+	DB                         infrastructures.ISQLConnection
 }
 
 // InitEsignService init
@@ -35,16 +36,20 @@ func InitEsignService() *EsignService {
 
 	esignRepositories := new(repositories.EsignRepository)
 
+	documentActivityRepositories := new(repositories.DocumentActivityRepository)
+	documentActivityRepositories.DB = &infrastructures.SQLConnection{}
+
 	EsignService := new(EsignService)
 	EsignService.DocumentRepository = documentRepositories
 	EsignService.DocumentUserRepository = documentUserRepositories
 	EsignService.EsignRepository = esignRepositories
+	EsignService.DocumentActivityRepository = documentActivityRepositories
 
 	return EsignService
 }
 
 // PostSign is
-func (s *EsignService) PostSign(ctx context.Context, dataSign models.EsignReq) (response *helpers.JSONResponse, err error) {
+func (s *EsignService) PostSign(ctx context.Context, dataSign models.EsignReq, dataUser models.Shortuser) (response *helpers.JSONResponse, err error) {
 
 	res, err := s.EsignRepository.PostEsign(ctx, dataSign)
 	if err != nil {
@@ -91,6 +96,18 @@ func (s *EsignService) PostSign(ctx context.Context, dataSign models.EsignReq) (
 			}).Error("[Service PostSign] error update doc signed")
 			return nil, err1
 		}
+
+		var actvity models.DocumentActivity
+
+		actvity.UserID = dataUser.ID
+		actvity.DocumentID = dataSign.DocumentID
+		actvity.Name = dataUser.Name
+		actvity.NIP = dataUser.Nip
+		actvity.Status = 1
+		actvity.Message = "Document has been signed"
+		actvity.Type = "signed"
+
+		_, err = s.DocumentActivityRepository.StoreDocumentActivity(ctx, tx, actvity)
 
 		tx.Commit()
 
