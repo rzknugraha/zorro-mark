@@ -128,17 +128,16 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 
 	fmt.Println("response Status:", rsp.Status)
 	fmt.Println("response Headers:", rsp.Header)
-	body, _ := ioutil.ReadAll(rsp.Body)
-	fmt.Println("response Body:", string(body))
 
 	if rsp.StatusCode != http.StatusOK {
+		body, _ := ioutil.ReadAll(rsp.Body)
 		err = json.Unmarshal(body, &result)
 		if err != nil {
 
 			logrus.WithFields(logrus.Fields{
 				"code":  5500,
 				"error": err,
-				"data":  body,
+				"data":  rsp.Body,
 			}).Error("[REPO PostEsign] error unmarshall ")
 
 			return
@@ -148,7 +147,7 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 			logrus.WithFields(logrus.Fields{
 				"code":  4400,
 				"error": err,
-				"data":  body,
+				"data":  rsp.Body,
 			}).Error("[REPO PostEsign] error make client do")
 
 		} else {
@@ -156,7 +155,7 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 			logrus.WithFields(logrus.Fields{
 				"code":  5500,
 				"error": err,
-				"data":  body,
+				"data":  rsp.Body,
 			}).Error("[REPO PostEsign] error make client do")
 		}
 
@@ -184,7 +183,7 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 		logrus.WithFields(logrus.Fields{
 			"code":  5500,
 			"error": err,
-			"data":  body,
+			"data":  rsp.Body,
 		}).Error("[REPO PostEsign] error move file signed")
 		return
 	}
