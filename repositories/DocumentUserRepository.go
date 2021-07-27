@@ -135,7 +135,7 @@ func (r *DocumentUserRepository) GetDocByUser(ctx context.Context, conditon map[
 
 // UpdateDocUsers func
 func (r *DocumentUserRepository) UpdateDocUsers(ctx context.Context, db *dbr.Tx, Condition map[string]interface{}, Payload map[string]interface{}) (affect int64, err error) {
-	span, _ := apm.StartSpan(ctx, "UpdateClient", "NewClientRepository")
+	span, _ := apm.StartSpan(ctx, "UpdateClient", "DocumentUserRepository")
 	defer span.End()
 
 	up := db.Update("document_user")

@@ -4,12 +4,18 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
+	"mime/multipart"
+	"os"
+	"strings"
+	"time"
 
 	"github.com/rzknugraha/zorro-mark/helpers"
 	"github.com/rzknugraha/zorro-mark/infrastructures"
 	"github.com/rzknugraha/zorro-mark/models"
 	"github.com/rzknugraha/zorro-mark/repositories"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -20,6 +26,7 @@ type IUserService interface {
 	FindUserByIDDPR(IDDPR int) (user models.User, err error)
 	Login(l models.Login) (result models.TokenResp, err error)
 	Profile(ctx context.Context, NIP string) (Response *helpers.JSONResponse, err error)
+	UpdateFile(ctx context.Context, file multipart.File, oldName string, IDUser int, fileTypeReq string) (Response *helpers.JSONResponse, err error)
 }
 
 // UserService is
@@ -117,5 +124,77 @@ func (p *UserService) Profile(ctx context.Context, NIP string) (Response *helper
 		Code:    2200,
 		Message: "Found",
 		Data:    user,
+	}, nil
+}
+
+// UpdateFile is
+func (p *UserService) UpdateFile(ctx context.Context, file multipart.File, oldName string, IDUser int, fileTypeReq string) (Response *helpers.JSONResponse, err error) {
+
+	trimSpace := strings.ReplaceAll(oldName, " ", "")
+	path := viper.GetString("storage.path")
+
+	fileResp := models.UploadResp{
+		FileName: fmt.Sprintf("%d-%s", time.Now().UnixNano(), trimSpace),
+	}
+
+	fullPath := fmt.Sprintf("/%s/%s/%s", path, fileTypeReq, fileResp.FileName)
+
+	dst, err := os.Create("." + fullPath)
+	if err != nil {
+		return
+
+	}
+
+	defer dst.Close()
+	// Copy the uploaded file to the filesystem
+	// at the specified destination
+	_, err = io.Copy(dst, file)
+	if err != nil {
+		return
+	}
+
+	tx, err := p.UserRepository.Tx()
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": err,
+			"data":  fileResp,
+		}).Error("[Service UpdateFile] error create tx")
+		return
+	}
+
+	defer tx.RollbackUnlessCommitted()
+	// TimeNow := time.Now()
+
+	condition := map[string]interface{}{
+		"id": IDUser,
+	}
+	updatePayload := map[string]interface{}{
+		fileTypeReq: fullPath,
+	}
+
+	res, err := p.UserRepository.UpdateUserCond(ctx, tx, condition, updatePayload)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": err,
+			"data":  updatePayload,
+		}).Error("[Service UpdateFile] error update file profile")
+		return
+	}
+	tx.Commit()
+
+	if res == 0 {
+		return &helpers.JSONResponse{
+			Code:    4400,
+			Message: "Failed Update File",
+			Data:    fileResp,
+		}, nil
+	}
+
+	return &helpers.JSONResponse{
+		Code:    2200,
+		Message: "Success",
+		Data:    fileResp,
 	}, nil
 }
