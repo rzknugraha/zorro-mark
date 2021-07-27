@@ -28,4 +28,5 @@ type UserLogin struct {
 	Position   string `json:"position"`
 	IdentityNO string `json:"identity_no"`
 	Avatar     string `json:"avatar"`
+	SignFile   string `json:"sign_file"`
 }
