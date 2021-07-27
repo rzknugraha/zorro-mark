@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 
 	"github.com/dgrijalva/jwt-go"
 	gorillaContext "github.com/gorilla/context"
@@ -101,7 +103,7 @@ func (c *UserController) Profile(res http.ResponseWriter, req *http.Request) {
 			"error": err,
 		}).Info(fmt.Sprintf("failed-get-profile-%s", nip))
 
-		helpers.Response(res, http.StatusOK, &helpers.JSONResponse{
+		helpers.Response(res, http.StatusInternalServerError, &helpers.JSONResponse{
 			Code:    5500,
 			Message: "Internal server error",
 			Error:   err.Error(),
@@ -126,5 +128,155 @@ func (c *UserController) Profile(res http.ResponseWriter, req *http.Request) {
 	}
 
 	helpers.DirectResponse(res, http.StatusOK, data)
+	return
+}
+
+//UploadProfile get user profile
+func (c *UserController) UploadProfile(res http.ResponseWriter, req *http.Request) {
+
+	UserInfo, _ := gorillaContext.Get(req, "UserInfo").(jwt.MapClaims)
+
+	IDUser := fmt.Sprintf("%v", UserInfo["id"])
+
+	intIDUser, err := strconv.Atoi(IDUser)
+	if err != nil {
+		resp := map[string]interface{}{
+			"code":    5500,
+			"message": "Error convert ID",
+			"event":   "failed-store-file",
+			"error":   err.Error(),
+			"data":    nil,
+		}
+
+		logrus.WithFields(resp).Info(fmt.Sprintf("failed-store-file"))
+		helpers.DirectResponse(res, http.StatusInternalServerError, resp)
+		return
+	}
+
+	req.ParseMultipartForm(1000 << 20)
+
+	fileTypeReq := req.Form.Get("type")
+	fmt.Println("fileTyfileTypeReqpe")
+	fmt.Println(fileTypeReq)
+
+	if fileTypeReq != "sign_file" && fileTypeReq != "avatar" && fileTypeReq != "identity_file" && fileTypeReq != "sr_file" {
+		resp := map[string]interface{}{
+			"code":    4400,
+			"message": "Error File Type Request",
+			"event":   "validation-upload-profile",
+			"error":   errors.New("failed validation"),
+			"data":    nil,
+		}
+
+		logrus.WithFields(resp).Info(fmt.Sprintf("validation-upload-profile"))
+		helpers.DirectResponse(res, http.StatusBadRequest, resp)
+		return
+	}
+
+	file, handler, err := req.FormFile("file")
+	if err != nil {
+		resp := map[string]interface{}{
+			"code":    5500,
+			"message": "Error Get File",
+			"event":   "failed-store-file",
+			"error":   err.Error(),
+			"data":    nil,
+		}
+
+		logrus.WithFields(resp).Info(fmt.Sprintf("failed-store-file"))
+		helpers.DirectResponse(res, http.StatusInternalServerError, resp)
+		return
+	}
+
+	defer file.Close()
+
+	buff := make([]byte, 512)
+	_, err = file.Read(buff)
+	if err != nil {
+
+		resp := map[string]interface{}{
+			"code":    5500,
+			"message": "Error Validation File",
+			"event":   "failed-store-file",
+			"error":   err.Error(),
+			"data":    nil,
+		}
+
+		logrus.WithFields(resp).Info(fmt.Sprintf("failed-store-file"))
+		helpers.DirectResponse(res, http.StatusInternalServerError, resp)
+		return
+
+	}
+
+	filetype := http.DetectContentType(buff)
+	if filetype != "image/jpeg" && filetype != "image/png" {
+		resp := map[string]interface{}{
+			"code":    4400,
+			"message": "Only Image File (png,jpg,jpeg)",
+			"event":   "validation-file",
+			"error":   "",
+			"data":    filetype,
+		}
+
+		logrus.WithFields(resp).Info(fmt.Sprintf("failed-store-file"))
+		helpers.DirectResponse(res, http.StatusInternalServerError, resp)
+		return
+
+	}
+	fmt.Println("filetype")
+	fmt.Println(filetype)
+
+	_, err = file.Seek(0, io.SeekStart)
+	if err != nil {
+		resp := map[string]interface{}{
+			"code":    4400,
+			"message": "Error seek file",
+			"event":   "validation-file",
+			"error":   err.Error(),
+			"data":    nil,
+		}
+
+		logrus.WithFields(resp).Info(fmt.Sprintf("failed-store-file"))
+		helpers.DirectResponse(res, http.StatusInternalServerError, resp)
+		return
+	}
+
+	data, err := c.UserService.UpdateFile(req.Context(), file, handler.Filename, intIDUser, fileTypeReq)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"event": "update-profile-file",
+			"nip":   fileTypeReq,
+			"error": err,
+		}).Info(fmt.Sprintf("failed-update-profile-file-%s", IDUser))
+
+		helpers.Response(res, http.StatusInternalServerError, &helpers.JSONResponse{
+			Code:    5500,
+			Message: "Internal server error",
+			Error:   err.Error(),
+		})
+
+		return
+	}
+
+	if data.Code != 2200 {
+		logrus.WithFields(logrus.Fields{
+			"code":  4400,
+			"event": "update-profile-file",
+			"nip":   fileTypeReq,
+			"error": errors.New("not 2200"),
+		}).Info(fmt.Sprintf("failed-update-profile-file-%s", IDUser))
+
+	} else {
+		logrus.WithFields(logrus.Fields{
+			"code":   2200,
+			"event":  "update-profile-file",
+			"IDUser": fileTypeReq,
+			"error":  nil,
+		}).Info(fmt.Sprintf("success-update-profile-file-%s", IDUser))
+	}
+
+	helpers.DirectResponse(res, http.StatusOK, data)
+
 	return
 }

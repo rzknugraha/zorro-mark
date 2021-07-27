@@ -9,3 +9,8 @@ type UploadResp struct {
 type FileReq struct {
 	Path string `json:"path" validate:"required"`
 }
+
+//UploadProfile request get file
+type UploadProfile struct {
+	Type string `json:"type" validate:"required"`
+}

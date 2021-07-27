@@ -90,16 +90,16 @@ func (c *UploadController) Upload(res http.ResponseWriter, req *http.Request) {
 
 	}
 
-	fmt.Println("buff")
-	fmt.Println(buff)
 	filetype := http.DetectContentType(buff)
+
+	fmt.Println(filetype)
 	if filetype != "application/pdf" {
 		resp := map[string]interface{}{
 			"code":    4400,
 			"message": "Only PDF File",
 			"event":   "validation-file",
 			"error":   "",
-			"data":    nil,
+			"data":    filetype,
 		}
 
 		logrus.WithFields(resp).Info(fmt.Sprintf("failed-store-file"))

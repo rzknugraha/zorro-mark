@@ -8,9 +8,11 @@ import (
 	"errors"
 	"time"
 
+	dbr "github.com/gocraft/dbr/v2"
 	"github.com/rzknugraha/zorro-mark/infrastructures"
 	"github.com/rzknugraha/zorro-mark/models"
 	"github.com/sirupsen/logrus"
+	"go.elastic.co/apm"
 )
 
 // IUserRepository is
@@ -21,11 +23,29 @@ type IUserRepository interface {
 	Login(l models.Login) (auth bool, user models.User, err error)
 	GetUserByNIPstore(nip string) (user models.User, err error)
 	FindOneUser(ctx context.Context, Condition map[string]interface{}) (User models.User, err error)
+	UpdateUserCond(ctx context.Context, db *dbr.Tx, Condition map[string]interface{}, Payload map[string]interface{}) (affect int64, err error)
+	Tx() (tx *dbr.Tx, err error)
 }
 
 // UserRepository is
 type UserRepository struct {
 	DB infrastructures.ISQLConnection
+}
+
+// Tx init a new transaction
+func (r *UserRepository) Tx() (tx *dbr.Tx, err error) {
+	db := r.DB.EsignWrite()
+	tx, err = db.Begin()
+
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": err,
+			"data":  nil,
+		}).Error("Error begin transaction")
+	}
+
+	return
 }
 
 // GetUserByIDDPR store agent type data to database
@@ -182,6 +202,30 @@ func (r *UserRepository) FindOneUser(ctx context.Context, Condition map[string]i
 		}).Error("[REPO FindOneUser] error get from DB")
 		return
 	}
+
+	return
+}
+
+// UpdateUserCond func
+func (r *UserRepository) UpdateUserCond(ctx context.Context, db *dbr.Tx, Condition map[string]interface{}, Payload map[string]interface{}) (affect int64, err error) {
+	span, _ := apm.StartSpan(ctx, "UpdateUserCond", "UserRepository")
+	defer span.End()
+
+	up := db.Update("users")
+
+	for key, val := range Condition {
+		up.Where(key+" = ?", val)
+	}
+
+	result, err := up.SetMap(Payload).ExecContext(ctx)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": err,
+			"data":  Condition,
+		}).Error("[REPO UpdateDocUsers] error update")
+	}
+	affect, _ = result.RowsAffected()
 
 	return
 }

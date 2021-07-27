@@ -42,6 +42,7 @@ func (r *Route) Init() *mux.Router {
 	ClientAuth.Use(JWTAuthMiddleware)
 
 	ClientAuth.HandleFunc("/profile", userController.Profile).Methods(http.MethodGet)
+	ClientAuth.HandleFunc("/profile/update/file", userController.UploadProfile).Methods(http.MethodPost)
 	ClientAuth.HandleFunc("/file/upload", uploadController.Upload).Methods("POST")
 	ClientAuth.HandleFunc("/file/get", uploadController.GetFile).Methods("POST")
 	ClientAuth.HandleFunc("/document/get", documentController.GetDocuments).Methods("GET")
