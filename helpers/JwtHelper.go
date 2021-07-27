@@ -27,6 +27,7 @@ func GenerateToken(user models.User) (t models.TokenResp, err error) {
 		Name:       user.Nama,
 		Position:   user.NamaJabatan,
 		IdentityNO: user.Ktp,
+		SignFile:   user.SignFile.ValueOrZero(),
 	}
 
 	token := jwt.NewWithClaims(
@@ -47,11 +48,22 @@ func GenerateToken(user models.User) (t models.TokenResp, err error) {
 	t.Token = signedToken
 	t.Expired = time.Now().Add(expired).UTC().Format(time.RFC1123)
 
+	avatarPath := viper.GetString("static_file") + user.Avatar.ValueOrZero()
+	if user.Avatar.IsZero() {
+		avatarPath = ""
+	}
+
+	signPath := viper.GetString("static_file") + user.Avatar.ValueOrZero()
+	if user.Avatar.IsZero() {
+		signPath = ""
+	}
+
 	t.DataUser.ID = user.ID
 	t.DataUser.Name = user.Nama
 	t.DataUser.IdentityNO = user.Ktp
 	t.DataUser.Nip = user.NIP
 	t.DataUser.Position = user.NamaJabatan
-
+	t.DataUser.Avatar = avatarPath
+	t.DataUser.SignFile = signPath
 	return
 }

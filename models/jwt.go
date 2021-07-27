@@ -10,6 +10,7 @@ type MyClaims struct {
 	Name       string `json:"name"`
 	Position   string `json:"position"`
 	IdentityNO string `json:"identity_no"`
+	SignFile   string `json:"sign_file"`
 }
 
 //TokenResp jwt clain
@@ -26,4 +27,6 @@ type UserLogin struct {
 	Name       string `json:"name"`
 	Position   string `json:"position"`
 	IdentityNO string `json:"identity_no"`
+	Avatar     string `json:"avatar"`
+	SignFile   string `json:"sign_file"`
 }

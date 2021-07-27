@@ -19,6 +19,7 @@ func (r *Route) Init() *mux.Router {
 	userController := controllers.InitUserController()
 	uploadController := controllers.InitUploadController()
 	documentController := controllers.InitDocumentController()
+	esignController := controllers.InitEsignController()
 
 	// Initialize router //
 	router := mux.NewRouter().StrictSlash(false)
@@ -48,6 +49,9 @@ func (r *Route) Init() *mux.Router {
 	ClientAuth.HandleFunc("/document/update", documentController.UpdateDocument).Methods("POST")
 
 	ClientAuth.HandleFunc("/document/activity/get/{IDDoc}", documentController.GetDocActivity).Methods("GET")
+
+	//esign
+	ClientAuth.HandleFunc("/sign/doc", esignController.SignDoc).Methods("POST")
 
 	return v1
 }

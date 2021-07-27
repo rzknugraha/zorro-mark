@@ -18,6 +18,7 @@ type IDocumentsRepository interface {
 	Tx() (tx *dbr.Tx, err error)
 	StoreDocuments(ctx context.Context, db *dbr.Tx, doc models.Documents) (idDoc int64, err error)
 	CountNameByUserID(ctx context.Context, doc models.Documents) (totalID int64, err error)
+	UpdateDoc(ctx context.Context, db *dbr.Tx, Condition map[string]interface{}, Payload map[string]interface{}) (affect int64, err error)
 }
 
 // DocumentsRepository is
@@ -119,6 +120,30 @@ func (r *DocumentsRepository) GetDocByUserID(ctx context.Context, conditon map[s
 
 		return
 	}
+
+	return
+}
+
+// UpdateDoc func
+func (r *DocumentsRepository) UpdateDoc(ctx context.Context, db *dbr.Tx, Condition map[string]interface{}, Payload map[string]interface{}) (affect int64, err error) {
+	span, _ := apm.StartSpan(ctx, "UpdateDoc", "DocumentsRepository")
+	defer span.End()
+
+	up := db.Update("documents")
+
+	for key, val := range Condition {
+		up.Where(key+" = ?", val)
+	}
+
+	result, err := up.SetMap(Payload).ExecContext(ctx)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": err,
+			"data":  Condition,
+		}).Error("[REPO UpdateDoc] error update")
+	}
+	affect, _ = result.RowsAffected()
 
 	return
 }
