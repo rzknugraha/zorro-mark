@@ -71,6 +71,8 @@ func (s *DocumentService) GetDocumentUser(ctx context.Context, filter models.Doc
 
 	if filter.Signed > 0 {
 		condition["documents.signed"] = filter.Signed
+	} else {
+		condition["documents.signed"] = 0
 	}
 
 	if filter.Signing > 0 {
