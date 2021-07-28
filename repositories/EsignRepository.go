@@ -161,8 +161,6 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 		return
 	}
 
-	fmt.Println("part1")
-	fmt.Println(part1)
 	// application/pdf
 
 	req, err := http.NewRequest("POST", "http://192.168.1.31/api/sign/pdf", payload)
@@ -178,9 +176,6 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	req.SetBasicAuth("admin", "qwerty")
-
-	fmt.Println("req")
-	fmt.Println(req)
 
 	rsp, err := client.Do(req)
 	if err != nil {
