@@ -53,8 +53,8 @@ func GenerateToken(user models.User) (t models.TokenResp, err error) {
 		avatarPath = ""
 	}
 
-	signPath := viper.GetString("static_file") + user.Avatar.ValueOrZero()
-	if user.Avatar.IsZero() {
+	signPath := viper.GetString("static_file") + user.SignFile.ValueOrZero()
+	if user.SignFile.IsZero() {
 		signPath = ""
 	}
 
