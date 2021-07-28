@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"net/textproto"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 
@@ -97,6 +98,44 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 
 		if dataSign.Image == true {
 			_ = writer.WriteField("image", "true")
+
+			fileSign, errFile2 := os.Open("." + dataSign.ImagePath)
+
+			defer fileSign.Close()
+
+			fi1, errFile2 := fileSign.Stat()
+			if errFile2 != nil {
+				logrus.WithFields(logrus.Fields{
+					"code":  5500,
+					"error": errFile2,
+					"data":  dataSign,
+				}).Error("[REPO PostEsign] error get file stats sign")
+				return
+			}
+
+			fileExtension := filepath.Ext(fi1.Name())
+
+			mimeCt := "image/jpeg"
+
+			if fileExtension == ".png" {
+				mimeCt = "image/png"
+			}
+
+			partHeader1 := textproto.MIMEHeader{}
+			disp1 := fmt.Sprintf("form-data; name=imageTTD; filename=%s", fi1.Name())
+			partHeader1.Add("Content-Disposition", disp1)
+			partHeader1.Add("Content-Type", mimeCt)
+			part2, errFile2 := writer.CreatePart(partHeader1)
+
+			_, errFile2 = io.Copy(part2, fileSign)
+			if errFile2 != nil {
+				logrus.WithFields(logrus.Fields{
+					"code":  5500,
+					"error": errFile2,
+					"data":  dataSign,
+				}).Error("[REPO PostEsign] error get file sign not found")
+				return
+			}
 
 		} else {
 			_ = writer.WriteField("image", "false")
