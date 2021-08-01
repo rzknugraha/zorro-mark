@@ -143,8 +143,8 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 		}
 	}
 
-	// _ = writer.WriteField("nik", dataSign.NIK)
-	_ = writer.WriteField("nik", "0803202100007062")
+	_ = writer.WriteField("nik", dataSign.NIK)
+	// _ = writer.WriteField("nik", "0803202100007062")
 	_ = writer.WriteField("passphrase", dataSign.Passphrase)
 	_ = writer.WriteField("tampilan", dataSign.Tampilan)
 	//

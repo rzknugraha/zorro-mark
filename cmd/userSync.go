@@ -27,7 +27,7 @@ var serveUserSyncCmd = &cobra.Command{
 	Short: "sync user",
 	Long:  `sync user from givem URL to update or create user`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("serveGrpc called")
+		fmt.Println("UserSync called")
 		serveUserSync := wrapper.InitSyncUser()
 		serveUserSync.Run()
 	},
