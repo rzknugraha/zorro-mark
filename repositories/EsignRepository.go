@@ -143,8 +143,12 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 		}
 	}
 
-	_ = writer.WriteField("nik", dataSign.NIK)
-	// _ = writer.WriteField("nik", viper.GetString("identity_no"))
+	if viper.GetString("esign.env") == "prod" {
+		_ = writer.WriteField("nik", dataSign.NIK)
+	} else {
+		_ = writer.WriteField("nik", viper.GetString("esign.identity_no"))
+	}
+
 	_ = writer.WriteField("passphrase", dataSign.Passphrase)
 	_ = writer.WriteField("tampilan", dataSign.Tampilan)
 	//
@@ -163,7 +167,7 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 
 	// application/pdf
 
-	req, err := http.NewRequest("POST", viper.GetString("esign"), payload)
+	req, err := http.NewRequest("POST", viper.GetString("esign.url"), payload)
 
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
@@ -175,7 +179,7 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
-	req.SetBasicAuth("admin", "qwerty")
+	req.SetBasicAuth(viper.GetString("esign.username"), viper.GetString("esign.password"))
 
 	rsp, err := client.Do(req)
 	if err != nil {
