@@ -181,6 +181,9 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 
 	req.SetBasicAuth(viper.GetString("esign.username"), viper.GetString("esign.password"))
 
+	fmt.Println("req")
+	fmt.Println(req)
+
 	rsp, err := client.Do(req)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
@@ -197,6 +200,9 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 
 	fmt.Println("response Status:", rsp.Status)
 	fmt.Println("response Headers:", rsp.Header)
+
+	fmt.Println("rsp.Body")
+	fmt.Println(rsp.Body)
 
 	if rsp.StatusCode != http.StatusOK {
 		body, _ := ioutil.ReadAll(rsp.Body)
