@@ -203,6 +203,8 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 
 	if rsp.StatusCode != http.StatusOK {
 		body, _ := ioutil.ReadAll(rsp.Body)
+		fmt.Println("body")
+		fmt.Println(string(body))
 		err = json.Unmarshal(body, &result)
 		if err != nil {
 
