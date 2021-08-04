@@ -244,6 +244,10 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 	}
 
 	defer dst.Close()
+
+	body22, _ := ioutil.ReadAll(rsp.Body)
+	fmt.Println("body22")
+	fmt.Println(body22)
 	// Copy the uploaded file to the filesystem
 	// at the specified destination
 	_, err = io.Copy(dst, rsp.Body)
