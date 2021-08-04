@@ -180,7 +180,8 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	req.SetBasicAuth(viper.GetString("esign.username"), viper.GetString("esign.password"))
-
+	fmt.Println("req")
+	fmt.Println(req)
 	rsp, err := client.Do(req)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
