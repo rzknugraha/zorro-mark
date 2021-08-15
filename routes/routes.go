@@ -51,8 +51,14 @@ func (r *Route) Init() *mux.Router {
 
 	ClientAuth.HandleFunc("/document/activity/get/{IDDoc}", documentController.GetDocActivity).Methods("GET")
 
+	ClientAuth.HandleFunc("/document/save/draft", documentController.SaveDraft).Methods("POST")
+	ClientAuth.HandleFunc("/document/send/sign/{IDTarget}", documentController.SendSigning).Methods("POST")
+
 	//esign
 	ClientAuth.HandleFunc("/sign/doc", esignController.SignDoc).Methods("POST")
+
+	//Users
+	ClientAuth.HandleFunc("/users/get", userController.GetAll).Methods("GET")
 
 	return v1
 }

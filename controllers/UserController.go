@@ -23,12 +23,15 @@ import (
 func InitUserController() *UserController {
 	userRepository := new(repositories.UserRepository)
 	userRepository.DB = &infrastructures.SQLConnection{}
+	userRepository.Redis = &infrastructures.Redis{}
 
 	userService := new(services.UserService)
 	userService.UserRepository = userRepository
+	userService.Redis = &infrastructures.Redis{}
 
 	userController := new(UserController)
 	userController.UserService = userService
+	userController.Redis = &infrastructures.Redis{}
 
 	return userController
 }
@@ -36,6 +39,7 @@ func InitUserController() *UserController {
 // UserController is
 type UserController struct {
 	UserService services.IUserService
+	Redis       infrastructures.IRedis
 }
 
 // Login is
@@ -278,5 +282,27 @@ func (c *UserController) UploadProfile(res http.ResponseWriter, req *http.Reques
 
 	helpers.DirectResponse(res, http.StatusOK, data)
 
+	return
+}
+
+//GetAll get all users
+func (c *UserController) GetAll(res http.ResponseWriter, req *http.Request) {
+
+	users, err := c.UserService.GetAll(req.Context())
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"event": "get-all-user",
+			"error": err,
+		}).Info(fmt.Sprintf("failed-get-all-user"))
+
+		helpers.Response(res, http.StatusInternalServerError, &helpers.JSONResponse{
+			Code:    5500,
+			Message: "Internal server error",
+			Error:   err.Error(),
+		})
+	}
+
+	helpers.DirectResponse(res, http.StatusOK, users)
 	return
 }

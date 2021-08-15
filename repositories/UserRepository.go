@@ -25,11 +25,13 @@ type IUserRepository interface {
 	FindOneUser(ctx context.Context, Condition map[string]interface{}) (User models.User, err error)
 	UpdateUserCond(ctx context.Context, db *dbr.Tx, Condition map[string]interface{}, Payload map[string]interface{}) (affect int64, err error)
 	Tx() (tx *dbr.Tx, err error)
+	GetAll(ctx context.Context) (user []models.ListUser, err error)
 }
 
 // UserRepository is
 type UserRepository struct {
-	DB infrastructures.ISQLConnection
+	DB    infrastructures.ISQLConnection
+	Redis infrastructures.IRedis
 }
 
 // Tx init a new transaction
@@ -226,6 +228,24 @@ func (r *UserRepository) UpdateUserCond(ctx context.Context, db *dbr.Tx, Conditi
 		}).Error("[REPO UpdateDocUsers] error update")
 	}
 	affect, _ = result.RowsAffected()
+
+	return
+}
+
+// GetAll agent type data to database
+func (r *UserRepository) GetAll(ctx context.Context) (user []models.ListUser, err error) {
+	db := r.DB.EsignRead()
+
+	_, err = db.Select("*").From("users").LoadContext(ctx, &user)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": err,
+			"data":  nil,
+		}).Error("[REPO GetAll] error get from DB")
+
+		return
+	}
 
 	return
 }

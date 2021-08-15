@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -10,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-redis/redis/v7"
 	"github.com/rzknugraha/zorro-mark/helpers"
 	"github.com/rzknugraha/zorro-mark/infrastructures"
 	"github.com/rzknugraha/zorro-mark/models"
@@ -27,20 +29,24 @@ type IUserService interface {
 	Login(l models.Login) (result models.TokenResp, err error)
 	Profile(ctx context.Context, NIP string) (Response *helpers.JSONResponse, err error)
 	UpdateFile(ctx context.Context, file multipart.File, oldName string, IDUser int, fileTypeReq string) (Response *helpers.JSONResponse, err error)
+	GetAll(ctx context.Context) (Response *helpers.JSONResponse, err error)
 }
 
 // UserService is
 type UserService struct {
 	UserRepository repositories.IUserRepository
+	Redis          infrastructures.IRedis
 }
 
 // InitUserService init
 func InitUserService() *UserService {
 	NewUserRepository := new(repositories.UserRepository)
 	NewUserRepository.DB = &infrastructures.SQLConnection{}
+	NewUserRepository.Redis = &infrastructures.Redis{}
 
 	UserService := new(UserService)
 	UserService.UserRepository = NewUserRepository
+	UserService.Redis = &infrastructures.Redis{}
 
 	return UserService
 }
@@ -196,5 +202,58 @@ func (p *UserService) UpdateFile(ctx context.Context, file multipart.File, oldNa
 		Code:    2200,
 		Message: "Success",
 		Data:    fileResp,
+	}, nil
+}
+
+//GetAll getg all user
+func (p *UserService) GetAll(ctx context.Context) (Response *helpers.JSONResponse, err error) {
+
+	var users []models.ListUser
+
+	fmt.Println(viper.GetString("redis.address"))
+
+	cache := p.Redis.Client()
+
+	key := fmt.Sprintf("all:users")
+	val, err := cache.Get(key).Result()
+	if err != redis.Nil && err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": err,
+			"data":  nil,
+		}).Error("[Service GetAll User] error get redis")
+		return
+	}
+	if err == redis.Nil {
+
+		users, err1 := p.UserRepository.GetAll(ctx)
+		if err1 != nil {
+			return
+		}
+
+		value, _ := json.Marshal(users)
+		err = cache.Set(key, value, time.Hour).Err()
+		if err != nil {
+			logrus.WithFields(logrus.Fields{
+				"code":  5500,
+				"error": err,
+				"data":  nil,
+			}).Error("[Service GetAll User] error set redis")
+			return
+		}
+
+		return &helpers.JSONResponse{
+			Code:    2200,
+			Message: "Success",
+			Data:    users,
+		}, nil
+
+	}
+	_ = json.Unmarshal([]byte(val), &users)
+
+	return &helpers.JSONResponse{
+		Code:    2200,
+		Message: "Success",
+		Data:    users,
 	}, nil
 }
