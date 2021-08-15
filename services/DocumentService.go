@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/gocraft/dbr/v2"
 	"github.com/rzknugraha/zorro-mark/helpers"
@@ -18,7 +19,8 @@ type IDocumentService interface {
 	UpdateDocumentAttributte(ctx context.Context, filter models.UpdateDocReq, userData models.Shortuser) (res *helpers.JSONResponse, err error)
 	GetSingleDocByUser(ctx context.Context, docID int, userData models.Shortuser) (res *helpers.JSONResponse, err error)
 	GetActivityDoc(ctx context.Context, docID int, userData models.Shortuser) (res *helpers.JSONResponse, err error)
-	SaveDraft(ctx context.Context, userData models.Shortuser, dataReq models.EsignReq) (res *helpers.JSONResponse, err error)
+	SaveDraft(ctx context.Context, userData models.Shortuser, dataReq models.DocumentUser) (res *helpers.JSONResponse, err error)
+	SendSign(ctx context.Context, userData models.Shortuser, dataReq models.DocumentUser, userTarget int) (res *helpers.JSONResponse, err error)
 }
 
 // DocumentService is
@@ -285,19 +287,21 @@ func (s *DocumentService) GetActivityDoc(ctx context.Context, docID int, userDat
 }
 
 //SaveDraft save draft single document
-func (s *DocumentService) SaveDraft(ctx context.Context, userData models.Shortuser, dataReq models.EsignReq) (res *helpers.JSONResponse, err error) {
+func (s *DocumentService) SaveDraft(ctx context.Context, userData models.Shortuser, dataReq models.DocumentUser) (res *helpers.JSONResponse, err error) {
 
 	var affect int64
 
+	TimeNow := time.Now()
 	payload := map[string]interface{}{
-		"tampilan": dataReq.Tampilan,
-		"page":     dataReq.Page,
-		"image":    dataReq.Image,
-		"x_axis":   dataReq.XAxis,
-		"y_axis":   dataReq.YAxis,
-		"width":    dataReq.Width,
-		"height":   dataReq.Height,
-		"labels":   1,
+		"tampilan":   dataReq.Tampilan,
+		"page":       dataReq.Page,
+		"image":      dataReq.Image,
+		"x_axis":     dataReq.XAxis,
+		"y_axis":     dataReq.YAxis,
+		"width":      dataReq.Width,
+		"height":     dataReq.Height,
+		"labels":     1,
+		"updated_at": TimeNow.Format("2006-01-02 15:04:05"),
 	}
 
 	condition := map[string]interface{}{
@@ -340,6 +344,85 @@ func (s *DocumentService) SaveDraft(ctx context.Context, userData models.Shortus
 			Message: "Failed to save draft",
 			Data:    nil,
 		}
+	}
+
+	tx.Commit()
+
+	return response, nil
+
+}
+
+//SendSign save draft single document
+func (s *DocumentService) SendSign(ctx context.Context, userData models.Shortuser, dataReq models.DocumentUser, userTarget int) (res *helpers.JSONResponse, err error) {
+
+	var affect int64
+
+	TimeNow := time.Now()
+	payload := map[string]interface{}{
+		"tampilan":   dataReq.Tampilan,
+		"page":       dataReq.Page,
+		"image":      dataReq.Image,
+		"x_axis":     dataReq.XAxis,
+		"y_axis":     dataReq.YAxis,
+		"width":      dataReq.Width,
+		"height":     dataReq.Height,
+		"signing":    1,
+		"status":     2,
+		"updated_at": TimeNow.Format("2006-01-02 15:04:05"),
+	}
+
+	condition := map[string]interface{}{
+		"user_id":     userData.ID,
+		"document_id": dataReq.DocumentID,
+	}
+
+	tx, err := s.DocumentRepository.Tx()
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": err,
+			"data":  dataReq,
+		}).Error("[Service SaveDraft] error create tx")
+		return
+	}
+
+	defer tx.RollbackUnlessCommitted()
+
+	affect, err = s.DocumentUserRepository.UpdateDocUsers(ctx, tx, condition, payload)
+	if err != nil {
+
+		return
+	}
+
+	var response *helpers.JSONResponse
+	if affect > 0 {
+
+		response = &helpers.JSONResponse{
+			Code:    2200,
+			Message: "Success",
+			Data:    nil,
+		}
+	} else {
+		response = &helpers.JSONResponse{
+			Code:    4400,
+			Message: "Failed to save signing",
+			Data:    nil,
+		}
+	}
+
+	dataReq.UserID = userTarget
+	dataReq.Signing = 1
+	dataReq.Status = 1
+	dataReq.CreatedAt = TimeNow.Format("2006-01-02 15:04:05")
+
+	idStore, err := s.DocumentUserRepository.StoreDocumentUser(ctx, tx, dataReq)
+	if err != nil || idStore == 0 {
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": err,
+			"data":  dataReq,
+		}).Error("[Service SendSign] error store doc user")
+		return
 	}
 
 	tx.Commit()
