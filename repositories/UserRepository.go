@@ -25,7 +25,7 @@ type IUserRepository interface {
 	FindOneUser(ctx context.Context, Condition map[string]interface{}) (User models.User, err error)
 	UpdateUserCond(ctx context.Context, db *dbr.Tx, Condition map[string]interface{}, Payload map[string]interface{}) (affect int64, err error)
 	Tx() (tx *dbr.Tx, err error)
-	GetAll(ctx context.Context) (user []models.Shortuser, err error)
+	GetAll(ctx context.Context) (user []models.ListUser, err error)
 }
 
 // UserRepository is
@@ -233,14 +233,14 @@ func (r *UserRepository) UpdateUserCond(ctx context.Context, db *dbr.Tx, Conditi
 }
 
 // GetAll agent type data to database
-func (r *UserRepository) GetAll(ctx context.Context) (user []models.Shortuser, err error) {
+func (r *UserRepository) GetAll(ctx context.Context) (user []models.ListUser, err error) {
 	db := r.DB.EsignRead()
 
 	_, err = db.Select("*").From("users").LoadContext(ctx, &user)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"code":  5500,
-			"error": errors.New("Failed Get All User"),
+			"error": err,
 			"data":  nil,
 		}).Error("[REPO GetAll] error get from DB")
 

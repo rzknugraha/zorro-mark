@@ -24,8 +24,8 @@ func (r *Redis) Client() *redis.Client {
 	if redisClient == nil {
 		client := redis.NewClient(&redis.Options{
 			Addr:     viper.GetString("redis.address"),
-			Password: viper.GetString("redis.password"), // no password set
-			DB:       0,                                 // use default DB
+			Password: "", // no password set
+			DB:       0,  // use default DB
 		})
 		_, err := client.Ping().Result()
 		if err != nil {

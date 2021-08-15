@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	redis "github.com/go-redis/redis/v7"
+	"github.com/go-redis/redis/v7"
 	"github.com/rzknugraha/zorro-mark/helpers"
 	"github.com/rzknugraha/zorro-mark/infrastructures"
 	"github.com/rzknugraha/zorro-mark/models"
@@ -208,9 +208,12 @@ func (p *UserService) UpdateFile(ctx context.Context, file multipart.File, oldNa
 //GetAll getg all user
 func (p *UserService) GetAll(ctx context.Context) (Response *helpers.JSONResponse, err error) {
 
-	var users []models.Shortuser
+	var users []models.ListUser
+
+	fmt.Println(viper.GetString("redis.address"))
 
 	cache := p.Redis.Client()
+
 	key := fmt.Sprintf("all:users")
 	val, err := cache.Get(key).Result()
 	if err != redis.Nil && err != nil {

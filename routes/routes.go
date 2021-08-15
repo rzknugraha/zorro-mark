@@ -54,5 +54,8 @@ func (r *Route) Init() *mux.Router {
 	//esign
 	ClientAuth.HandleFunc("/sign/doc", esignController.SignDoc).Methods("POST")
 
+	//Users
+	ClientAuth.HandleFunc("/users/get", userController.GetAll).Methods("GET")
+
 	return v1
 }

@@ -62,3 +62,14 @@ type Shortuser struct {
 	NamaSatker  string `db:"nama_satker" json:"nama_satker"`
 	SignFile    string `db:"sign_file" json:"sign_file"`
 }
+
+//ListUser for Shortuser paylioad
+type ListUser struct {
+	ID          int         `db:"id" json:"id"`
+	Nip         string      `json:"nip"`
+	Nama        string      `db:"nama" json:"name"`
+	IdentityNO  null.String `db:"identity_no" json:"identity_no"`
+	NamaJabatan string      `db:"nama_jabatan" json:"nama_jabatan"`
+	NamaSatker  string      `db:"nama_satker" json:"nama_satker"`
+	SignFile    null.String `db:"sign_file" json:"sign_file"`
+}
