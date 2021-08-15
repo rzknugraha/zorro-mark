@@ -18,6 +18,7 @@ type IDocumentService interface {
 	UpdateDocumentAttributte(ctx context.Context, filter models.UpdateDocReq, userData models.Shortuser) (res *helpers.JSONResponse, err error)
 	GetSingleDocByUser(ctx context.Context, docID int, userData models.Shortuser) (res *helpers.JSONResponse, err error)
 	GetActivityDoc(ctx context.Context, docID int, userData models.Shortuser) (res *helpers.JSONResponse, err error)
+	SaveDraft(ctx context.Context, userData models.Shortuser, dataReq models.EsignReq) (res *helpers.JSONResponse, err error)
 }
 
 // DocumentService is
@@ -281,4 +282,68 @@ func (s *DocumentService) GetActivityDoc(ctx context.Context, docID int, userDat
 	}
 
 	return response, nil
+}
+
+//SaveDraft save draft single document
+func (s *DocumentService) SaveDraft(ctx context.Context, userData models.Shortuser, dataReq models.EsignReq) (res *helpers.JSONResponse, err error) {
+
+	var affect int64
+
+	payload := map[string]interface{}{
+		"tampilan": dataReq.Tampilan,
+		"page":     dataReq.Page,
+		"image":    dataReq.Image,
+		"x_axis":   dataReq.XAxis,
+		"y_axis":   dataReq.YAxis,
+		"width":    dataReq.Width,
+		"height":   dataReq.Height,
+		"labels":   1,
+	}
+
+	condition := map[string]interface{}{
+		"user_id":     userData.ID,
+		"document_id": dataReq.DocumentID,
+	}
+
+	tx, err := s.DocumentRepository.Tx()
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": err,
+			"data":  dataReq,
+		}).Error("[Service SaveDraft] error create tx")
+		return
+	}
+
+	defer tx.RollbackUnlessCommitted()
+	fmt.Println("condition")
+	fmt.Println(condition)
+	fmt.Println("payload")
+	fmt.Println(payload)
+	affect, err = s.DocumentUserRepository.UpdateDocUsers(ctx, tx, condition, payload)
+	if err != nil {
+
+		return
+	}
+
+	var response *helpers.JSONResponse
+	if affect > 0 {
+
+		response = &helpers.JSONResponse{
+			Code:    2200,
+			Message: "Success",
+			Data:    nil,
+		}
+	} else {
+		response = &helpers.JSONResponse{
+			Code:    4400,
+			Message: "Failed to save draft",
+			Data:    nil,
+		}
+	}
+
+	tx.Commit()
+
+	return response, nil
+
 }
