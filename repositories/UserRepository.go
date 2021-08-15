@@ -30,7 +30,8 @@ type IUserRepository interface {
 
 // UserRepository is
 type UserRepository struct {
-	DB infrastructures.ISQLConnection
+	DB    infrastructures.ISQLConnection
+	Redis infrastructures.IRedis
 }
 
 // Tx init a new transaction
@@ -241,7 +242,7 @@ func (r *UserRepository) GetAll(ctx context.Context) (user []models.Shortuser, e
 			"code":  5500,
 			"error": errors.New("Failed Get All User"),
 			"data":  nil,
-		}).Error("[REPO GetUserByNIP] error get from DB")
+		}).Error("[REPO GetAll] error get from DB")
 
 		return
 	}
