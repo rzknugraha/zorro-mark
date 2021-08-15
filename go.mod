@@ -9,6 +9,7 @@ require (
 	github.com/getsentry/raven-go v0.2.0 // indirect
 	github.com/go-playground/universal-translator v0.17.0 // indirect
 	github.com/go-playground/validator v9.31.0+incompatible
+	github.com/go-redis/redis/v7 v7.4.1
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gocraft/dbr/v2 v2.7.1
 	github.com/gorilla/context v1.1.1
