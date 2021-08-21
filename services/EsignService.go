@@ -136,6 +136,11 @@ func (s *EsignService) PostSign(ctx context.Context, dataSign models.EsignReq, d
 			"updated_at": TimeNow.Format("2006-01-02 15:04:05"),
 		}
 
+		fmt.Println("condition")
+		fmt.Println(condition)
+		fmt.Println("payload")
+		fmt.Println(payload)
+
 		_, err1 = s.DocumentRepository.UpdateDoc(ctx, tx, condition, payload)
 		if err1 != nil {
 			logrus.WithFields(logrus.Fields{
