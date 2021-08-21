@@ -5,6 +5,7 @@ import (
 	//"github.com/afex/hystrix-go/hystrix"
 
 	"context"
+	"fmt"
 
 	dbr "github.com/gocraft/dbr/v2"
 	"github.com/rzknugraha/zorro-mark/infrastructures"
@@ -134,7 +135,8 @@ func (r *DocumentsRepository) UpdateDoc(ctx context.Context, db *dbr.Tx, Conditi
 	for key, val := range Condition {
 		up.Where(key+" = ?", val)
 	}
-
+	fmt.Println("up")
+	fmt.Println(up)
 	result, err := up.SetMap(Payload).ExecContext(ctx)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{

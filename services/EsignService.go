@@ -151,6 +151,8 @@ func (s *EsignService) PostSign(ctx context.Context, dataSign models.EsignReq, d
 			return nil, err1
 		}
 
+		fmt.Println("selesai update doc")
+
 		actvity.Status = 1
 		actvity.Message = "Document has been signed"
 		actvity.Type = "signed"
