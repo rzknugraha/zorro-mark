@@ -200,6 +200,8 @@ func (c *UploadController) GetFile(res http.ResponseWriter, req *http.Request) {
 
 	}
 	// Open file
+	fmt.Println("path.Path")
+	fmt.Println(path.Path)
 	f, err := os.Open("." + path.Path)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
