@@ -501,7 +501,7 @@ func (s *DocumentService) SaveDraftMultiple(ctx context.Context, userData models
 					"code":  5500,
 					"error": err1,
 					"data":  result,
-				}).Error("[Service PostSignMultiple] error not 2200")
+				}).Error("[Service SaveDraftMultiple] error not 2200")
 				fatalErrors <- err1
 				cancel()
 				return

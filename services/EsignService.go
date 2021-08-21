@@ -311,18 +311,7 @@ func (s *EsignService) PostSignMultiple(ctx context.Context, dataSign models.Esi
 
 			}
 
-			if result.Code != 200 {
-
-				err1 := errors.New(result.Message)
-				logrus.WithFields(logrus.Fields{
-					"code":  5500,
-					"error": err1,
-					"data":  result,
-				}).Error("[Service PostSignMultiple] error not 2200")
-				fatalErrors <- err1
-				cancel()
-				return
-			}
+			fmt.Println(result)
 		}(docID)
 	}
 
