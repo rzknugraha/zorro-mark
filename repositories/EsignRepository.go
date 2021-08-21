@@ -77,8 +77,9 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 			"code":  5500,
 			"error": errFile1,
 			"data":  dataSign,
-		}).Error("[REPO PostEsign] error get file not founf")
-		return
+		}).Error("[REPO PostEsign] error get file not found")
+		result.StatusCode = 500
+		return result, errFile1
 	}
 
 	//using QR or Image
@@ -110,7 +111,8 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 					"error": errFile2,
 					"data":  dataSign,
 				}).Error("[REPO PostEsign] error get file stats sign")
-				return
+				result.StatusCode = 500
+				return result, errFile2
 			}
 
 			fileExtension := filepath.Ext(fi1.Name())
@@ -134,7 +136,8 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 					"error": errFile2,
 					"data":  dataSign,
 				}).Error("[REPO PostEsign] error get file sign not found")
-				return
+				result.StatusCode = 500
+				return result, errFile2
 			}
 
 		} else {
@@ -162,19 +165,20 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 			"error": err,
 			"data":  dataSign,
 		}).Error("[REPO PostEsign] error close writter")
+		result.StatusCode = 500
 		return
 	}
 
 	// application/pdf
 
 	req, err := http.NewRequest("POST", viper.GetString("esign.url")+"/api/sign/pdf", payload)
-
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"code":  5500,
 			"error": err,
 			"data":  dataSign,
 		}).Error("[REPO PostEsign] error post data")
+		result.StatusCode = 500
 		return
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
