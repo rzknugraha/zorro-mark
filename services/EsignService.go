@@ -311,6 +311,8 @@ func (s *EsignService) PostSignMultiple(ctx context.Context, dataSign models.Esi
 
 			}
 
+			fmt.Println("result qqqqqqqaaaaaaaaaaaaaaaa")
+			fmt.Println(result)
 			if result.Code != 2200 {
 
 				err1 := errors.New(result.Message)
