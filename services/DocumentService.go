@@ -2,7 +2,11 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strconv"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/gocraft/dbr/v2"
@@ -21,6 +25,7 @@ type IDocumentService interface {
 	GetActivityDoc(ctx context.Context, docID int, userData models.Shortuser) (res *helpers.JSONResponse, err error)
 	SaveDraft(ctx context.Context, userData models.Shortuser, dataReq models.DocumentUser) (res *helpers.JSONResponse, err error)
 	SendSign(ctx context.Context, userData models.Shortuser, dataReq models.DocumentUser, userTarget int) (res *helpers.JSONResponse, err error)
+	SaveDraftMultiple(ctx context.Context, userData models.Shortuser, dataReq models.DocumentUserMultiple) (res *helpers.JSONResponse, err error)
 }
 
 // DocumentService is
@@ -428,5 +433,115 @@ func (s *DocumentService) SendSign(ctx context.Context, userData models.Shortuse
 	tx.Commit()
 
 	return response, nil
+
+}
+
+//SaveDraftMultiple save draft single document
+func (s *DocumentService) SaveDraftMultiple(ctx context.Context, userData models.Shortuser, dataReq models.DocumentUserMultiple) (res *helpers.JSONResponse, err error) {
+
+	docIDs := strings.Split(dataReq.DocumentID, ",")
+
+	docDraft := models.DocumentUser{
+		UserID:   userData.ID,
+		Tampilan: dataReq.Tampilan,
+		Page:     dataReq.Page,
+		Image:    dataReq.Image,
+		XAxis:    dataReq.XAxis,
+		YAxis:    dataReq.YAxis,
+		Width:    dataReq.Width,
+		Height:   dataReq.Height,
+	}
+
+	fatalErrors := make(chan error)
+	wgDone := make(chan bool)
+
+	newctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	var wg sync.WaitGroup
+
+	for _, docID := range docIDs {
+		wg.Add(1)
+		go func(docIDInside string) {
+			defer wg.Done()
+
+			select {
+			case <-newctx.Done():
+				return // Error somewhere, terminate
+			default: // Default is must to avoid blocking
+			}
+			intDocID, err := strconv.Atoi(docIDInside)
+			if err != nil {
+				logrus.WithFields(logrus.Fields{
+					"code":  5500,
+					"error": err,
+					"data":  docIDInside,
+				}).Error("[Service SaveDraftMultiple] error convert to int docID")
+				fatalErrors <- err
+				cancel()
+				return
+			}
+
+			docDraft.DocumentID = intDocID
+
+			result, err := s.SaveDraft(ctx, userData, docDraft)
+			if err != nil {
+				logrus.WithFields(logrus.Fields{
+					"code":  5500,
+					"error": err,
+					"data":  docIDInside,
+				}).Error("[Service SaveDraftMultiple] error save draft")
+				fatalErrors <- err
+				return
+			}
+
+			if result == nil {
+				err1 := errors.New("not 2200")
+				logrus.WithFields(logrus.Fields{
+					"code":  5500,
+					"error": err1,
+					"data":  result,
+				}).Error("[Service PostSignMultiple] error not 2200")
+				fatalErrors <- err1
+				cancel()
+				return
+
+			}
+
+		}(docID)
+	}
+
+	go func() {
+		wg.Wait()
+		close(wgDone)
+	}()
+
+	select {
+	case <-wgDone:
+		// carry on
+		break
+	case err := <-fatalErrors:
+		// close(fatalErrors)
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": err,
+			"data":  docDraft,
+		}).Error("[Service SaveDraftMultiple] error when save multiple draft")
+		response := &helpers.JSONResponse{
+			Code:    5500,
+			Message: err.Error(),
+			Data:    nil,
+		}
+
+		return response, err
+	}
+
+	fmt.Println("ga masuk error")
+	res = &helpers.JSONResponse{
+		Code:    2200,
+		Message: "success",
+		Data:    nil,
+	}
+	return
 
 }

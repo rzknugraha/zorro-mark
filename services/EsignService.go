@@ -208,8 +208,7 @@ func (s *EsignService) PostSignMultiple(ctx context.Context, dataSign models.Esi
 			return nil, err
 		}
 	}
-	fmt.Println("rescheck")
-	fmt.Println(rescheck)
+
 	if rescheck.StatusCode != 200 {
 		if err != nil {
 			logrus.WithFields(logrus.Fields{
@@ -254,6 +253,7 @@ func (s *EsignService) PostSignMultiple(ctx context.Context, dataSign models.Esi
 					"data":  docIDInside,
 				}).Error("[Service PostSignMultiple] error convert to int docID")
 				fatalErrors <- err
+				cancel()
 				return
 			}
 			getDoc, err := s.DocumentUserRepository.GetSingleDocByUser(ctx, dataUser.ID, intDocID)
