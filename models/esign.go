@@ -47,3 +47,12 @@ type EsignResp struct {
 	Error      string `json:"error"`
 	PathFile   string `json:"path_file"`
 }
+
+//EsignMutipleReq data struct
+type EsignMutipleReq struct {
+	DocumentID string `json:"document_id" validate:"required"`
+	FilePath   string `json:"file_path"`
+	ImagePath  string `json:"image_path"`
+	NIK        string `json:"nik"`
+	Passphrase string `json:"passphrase" validate:"required"`
+}

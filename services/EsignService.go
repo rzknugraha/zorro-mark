@@ -2,8 +2,13 @@ package services
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/rzknugraha/zorro-mark/helpers"
@@ -11,11 +16,13 @@ import (
 	"github.com/rzknugraha/zorro-mark/models"
 	"github.com/rzknugraha/zorro-mark/repositories"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 // IEsignService is
 type IEsignService interface {
 	PostSign(ctx context.Context, dataSign models.EsignReq, dataUser models.Shortuser) (Response *helpers.JSONResponse, err error)
+	PostSignMultiple(ctx context.Context, dataSign models.EsignMutipleReq, dataUser models.Shortuser) (response *helpers.JSONResponse, err error)
 }
 
 // EsignService is
@@ -172,6 +179,163 @@ func (s *EsignService) PostSign(ctx context.Context, dataSign models.EsignReq, d
 		}
 		tx.Commit()
 
+	}
+	return
+}
+
+// PostSignMultiple is
+func (s *EsignService) PostSignMultiple(ctx context.Context, dataSign models.EsignMutipleReq, dataUser models.Shortuser) (response *helpers.JSONResponse, err error) {
+
+	//check passpharse
+
+	esignCheck := models.EsignReq{
+
+		NIK:        dataUser.IdentityNO,
+		Tampilan:   "invisible",
+		Passphrase: dataSign.Passphrase,
+		Image:      false,
+		FilePath:   viper.GetString("esign.dummy"),
+	}
+
+	rescheck, err := s.EsignRepository.PostEsign(ctx, esignCheck)
+	if err != nil {
+		if err != nil {
+			logrus.WithFields(logrus.Fields{
+				"code":  5500,
+				"error": err,
+				"data":  nil,
+			}).Error("[Service PostSignMultiple] error Post dummy pdf")
+			return nil, err
+		}
+	}
+
+	if rescheck.StatusCode != 200 {
+		if err != nil {
+			logrus.WithFields(logrus.Fields{
+				"code":  5500,
+				"error": err,
+				"data":  nil,
+			}).Error("[Service PostSignMultiple] error Post dummy pdf not 200")
+			return nil, err
+		}
+	}
+
+	docIDs := strings.Split(dataSign.DocumentID, ",")
+
+	singleSign := models.EsignReq{
+		NIK:        dataUser.IdentityNO,
+		Passphrase: dataSign.Passphrase,
+	}
+
+	fatalErrors := make(chan error)
+	wgDone := make(chan bool)
+
+	newctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	var wg sync.WaitGroup
+
+	for _, docID := range docIDs {
+		wg.Add(1)
+		go func(docIDInside string) {
+			defer wg.Done()
+
+			select {
+			case <-newctx.Done():
+				return // Error somewhere, terminate
+			default: // Default is must to avoid blocking
+			}
+			intDocID, err := strconv.Atoi(docIDInside)
+			if err != nil {
+				logrus.WithFields(logrus.Fields{
+					"code":  5500,
+					"error": err,
+					"data":  docIDInside,
+				}).Error("[Service PostSignMultiple] error convert to int docID")
+				fatalErrors <- err
+				cancel()
+				return
+			}
+			getDoc, err := s.DocumentUserRepository.GetSingleDocByUser(ctx, dataUser.ID, intDocID)
+			if err != nil {
+				logrus.WithFields(logrus.Fields{
+					"code":  5500,
+					"error": err,
+					"data":  intDocID,
+				}).Error("[Service PostSignMultiple] error get document by get ID")
+				fatalErrors <- err
+				cancel()
+				return
+			}
+
+			singleSign.DocumentID = intDocID
+			singleSign.FilePath = getDoc.Path
+			singleSign.Page = getDoc.Page
+			singleSign.Tampilan = getDoc.Tampilan.ValueOrZero()
+			singleSign.ImagePath = dataUser.SignFile
+			singleSign.Height = getDoc.Height
+			singleSign.Width = getDoc.Width
+			singleSign.XAxis = getDoc.XAxis
+			singleSign.YAxis = getDoc.YAxis
+
+			result, err := s.PostSign(ctx, singleSign, dataUser)
+			if err != nil {
+				logrus.WithFields(logrus.Fields{
+					"code":  5500,
+					"error": err,
+					"data":  singleSign,
+				}).Error("[Service PostSignMultiple] error when multiple sign")
+				fatalErrors <- err
+				cancel()
+				return
+
+			}
+
+			if result == nil {
+				err1 := errors.New("not 2200")
+				logrus.WithFields(logrus.Fields{
+					"code":  5500,
+					"error": err1,
+					"data":  result,
+				}).Error("[Service PostSignMultiple] error not 2200")
+				fatalErrors <- err1
+				cancel()
+				return
+
+			}
+		}(docID)
+	}
+
+	go func() {
+		wg.Wait()
+		close(wgDone)
+	}()
+
+	select {
+	case <-wgDone:
+		// carry on
+		break
+	case err := <-fatalErrors:
+		// close(fatalErrors)
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": err,
+			"data":  singleSign,
+		}).Error("[Service PostSignMultiple] error when multiple sign")
+		response := &helpers.JSONResponse{
+			Code:    5500,
+			Message: err.Error(),
+			Data:    nil,
+		}
+
+		return response, err
+	}
+
+	fmt.Println("ga masuk error")
+	response = &helpers.JSONResponse{
+		Code:    2200,
+		Message: "success",
+		Data:    nil,
 	}
 	return
 }
