@@ -225,7 +225,7 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 				"code":  4400,
 				"error": err,
 				"data":  rsp.Body,
-			}).Error("[REPO PostEsign] error make client do")
+			}).Error("[REPO PostEsign] error status 400")
 
 		} else {
 
@@ -233,7 +233,7 @@ func (r *EsignRepository) PostEsign(ctx context.Context, dataSign models.EsignRe
 				"code":  5500,
 				"error": err,
 				"data":  rsp.Body,
-			}).Error("[REPO PostEsign] error make client do")
+			}).Error("[REPO PostEsign] error other")
 		}
 
 		return
