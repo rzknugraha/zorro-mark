@@ -173,6 +173,10 @@ func (s *EsignService) PostSign(ctx context.Context, dataSign models.EsignReq, d
 		payload1 := map[string]interface{}{
 			"status":     1,
 			"updated_at": TimeNow.Format("2006-01-02 15:04:05"),
+			"x_axis":     dataSign.XAxis,
+			"y_axis":     dataSign.YAxis,
+			"height":     dataSign.Height,
+			"width":      dataSign.Width,
 		}
 
 		_, err = s.DocumentUserRepository.UpdateDocUsers(ctx, tx, condition1, payload1)
@@ -311,10 +315,7 @@ func (s *EsignService) PostSignMultiple(ctx context.Context, dataSign models.Esi
 
 			}
 
-			fmt.Println("result qqqqqqqaaaaaaaaaaaaaaaa")
-			fmt.Println(result)
 			if result.Code != 2200 {
-
 				err1 := errors.New(result.Message)
 				logrus.WithFields(logrus.Fields{
 					"code":  5500,
