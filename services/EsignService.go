@@ -177,6 +177,11 @@ func (s *EsignService) PostSign(ctx context.Context, dataSign models.EsignReq, d
 			"y_axis":     dataSign.YAxis,
 			"height":     dataSign.Height,
 			"width":      dataSign.Width,
+			"tampilan":   dataSign.Tampilan,
+			"image":      dataSign.Image,
+			"page":       dataSign.Page,
+			"signing":    0,
+			"labels":     0,
 		}
 
 		_, err = s.DocumentUserRepository.UpdateDocUsers(ctx, tx, condition1, payload1)
@@ -284,6 +289,7 @@ func (s *EsignService) PostSignMultiple(ctx context.Context, dataSign models.Esi
 			singleSign.Page = getDoc.Page
 			singleSign.Tampilan = getDoc.Tampilan.ValueOrZero()
 			singleSign.ImagePath = dataUser.SignFile
+			singleSign.Image = getDoc.Image
 			singleSign.Height = getDoc.Height
 			singleSign.Width = getDoc.Width
 			singleSign.XAxis = getDoc.XAxis
