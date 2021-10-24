@@ -71,7 +71,7 @@ func (s *DocumentService) GetDocumentUser(ctx context.Context, filter models.Doc
 		"document_user.user_id": filter.UserID,
 	}
 
-	sorting := "ASC"
+	sorting := "DESC"
 
 	if filter.Starred > 0 {
 		condition["document_user.starred"] = filter.Starred
