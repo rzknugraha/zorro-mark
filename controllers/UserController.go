@@ -1,6 +1,9 @@
 package controllers
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -304,5 +307,56 @@ func (c *UserController) GetAll(res http.ResponseWriter, req *http.Request) {
 	}
 
 	helpers.DirectResponse(res, http.StatusOK, users)
+	return
+}
+
+//UserEncrypted get all users
+func (c *UserController) UserEncrypted(res http.ResponseWriter, req *http.Request) {
+
+	var co models.EncryptedCookies
+	//Read request data
+	body, _ := ioutil.ReadAll(req.Body)
+	err := json.Unmarshal(body, &co)
+
+	if err != nil {
+		helpers.DirectResponse(res, http.StatusBadRequest, "Failed read input data")
+		return
+	}
+
+	key3 := "in1,k0nci g3rbang kenikm4tan! *5"
+	fmt.Println("co.Cookies2")
+	fmt.Println(co.Cookies2)
+	decodeKey1, err := base64.StdEncoding.DecodeString(co.Cookies1)
+	decodeKey2, err := base64.StdEncoding.DecodeString(co.Cookies2)
+
+	key := []byte(key3)
+	ciphertext := decodeKey2
+
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		fmt.Println(err)
+		helpers.DirectResponse(res, http.StatusBadRequest, err)
+		return
+	}
+
+	fmt.Println("ciphertext")
+	fmt.Println(string(ciphertext))
+	fmt.Println("aes.BlockSize")
+	fmt.Println(aes.BlockSize)
+
+	// The IV needs to be unique, but not secure. Therefore it's common to
+	// include it at the beginning of the ciphertext.
+	if len(ciphertext) < aes.BlockSize {
+		panic("ciphertext too short")
+	}
+	iv := decodeKey1
+	ciphertext = ciphertext[aes.BlockSize:]
+
+	stream := cipher.NewCFBDecrypter(block, iv)
+
+	// XORKeyStream can work in-place if the two arguments are the same.
+	stream.XORKeyStream(ciphertext, ciphertext)
+	fmt.Printf("%s", ciphertext)
+
 	return
 }

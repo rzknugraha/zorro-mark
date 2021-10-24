@@ -73,3 +73,9 @@ type ListUser struct {
 	NamaSatker  string      `db:"nama_satker" json:"nama_satker"`
 	SignFile    null.String `db:"sign_file" json:"sign_file"`
 }
+
+//EncryptedCookies for encrypted from DPR SSO
+type EncryptedCookies struct {
+	Cookies1 string `db:"cookies1" json:"cookies1"`
+	Cookies2 string `db:"cookies2" json:"cookies2"`
+}
