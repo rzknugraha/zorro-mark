@@ -20,6 +20,7 @@ type IDocumentsRepository interface {
 	StoreDocuments(ctx context.Context, db *dbr.Tx, doc models.Documents) (idDoc int64, err error)
 	CountNameByUserID(ctx context.Context, doc models.Documents) (totalID int64, err error)
 	UpdateDoc(ctx context.Context, db *dbr.Tx, Condition map[string]interface{}, Payload map[string]interface{}) (affect int64, err error)
+	GetDoc(ctx context.Context, conditon map[string]interface{}) (doc models.Documents, err error)
 }
 
 // DocumentsRepository is
@@ -101,8 +102,8 @@ func (r *DocumentsRepository) CountNameByUserID(ctx context.Context, doc models.
 	return
 }
 
-//GetDocByUserID get document
-func (r *DocumentsRepository) GetDocByUserID(ctx context.Context, conditon map[string]interface{}) (totalID int64, err error) {
+//GetDoc get document
+func (r *DocumentsRepository) GetDoc(ctx context.Context, conditon map[string]interface{}) (doc models.Documents, err error) {
 
 	db := r.DB.EsignRead()
 
@@ -112,6 +113,7 @@ func (r *DocumentsRepository) GetDocByUserID(ctx context.Context, conditon map[s
 		q.Where(key+" = ?", val)
 	}
 
+	err = q.LoadOneContext(ctx, &doc)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
 			"code":  5500,

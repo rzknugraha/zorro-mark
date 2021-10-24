@@ -86,6 +86,7 @@ func (c *DocumentController) GetDocuments(res http.ResponseWriter, req *http.Req
 
 	data, err := c.DocumentService.GetDocumentUser(req.Context(), filter, pageReq)
 	if err != nil {
+		helpers.DirectResponse(res, http.StatusInternalServerError, data)
 		return
 	}
 
@@ -340,7 +341,7 @@ func (c *DocumentController) SendSigning(res http.ResponseWriter, req *http.Requ
 		ID:   intIDUser,
 	}
 
-	var dataReq models.DocumentUser
+	var dataReq models.DocumentUserSendSigning
 	//Read request data
 	body, _ := ioutil.ReadAll(req.Body)
 	err = json.Unmarshal(body, &dataReq)

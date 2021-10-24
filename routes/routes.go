@@ -20,6 +20,7 @@ func (r *Route) Init() *mux.Router {
 	uploadController := controllers.InitUploadController()
 	documentController := controllers.InitDocumentController()
 	esignController := controllers.InitEsignController()
+	commentController := controllers.InitCommentController()
 
 	// Initialize router //
 	router := mux.NewRouter().StrictSlash(false)
@@ -58,6 +59,10 @@ func (r *Route) Init() *mux.Router {
 	//esign
 	ClientAuth.HandleFunc("/sign/doc", esignController.SignDoc).Methods("POST")
 	ClientAuth.HandleFunc("/sign/doc/multiple", esignController.SignDocMutiple).Methods("POST")
+
+	//comment
+	ClientAuth.HandleFunc("/comment/{IDDoc}", commentController.GetComments).Methods("GET")
+	ClientAuth.HandleFunc("/comment/store", commentController.StoreComment).Methods("POST")
 
 	//Users
 	ClientAuth.HandleFunc("/users/get", userController.GetAll).Methods("GET")

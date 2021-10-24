@@ -24,7 +24,7 @@ type IDocumentService interface {
 	GetSingleDocByUser(ctx context.Context, docID int, userData models.Shortuser) (res *helpers.JSONResponse, err error)
 	GetActivityDoc(ctx context.Context, docID int, userData models.Shortuser) (res *helpers.JSONResponse, err error)
 	SaveDraft(ctx context.Context, userData models.Shortuser, dataReq models.DocumentUser) (res *helpers.JSONResponse, err error)
-	SendSign(ctx context.Context, userData models.Shortuser, dataReq models.DocumentUser, userTarget int) (res *helpers.JSONResponse, err error)
+	SendSign(ctx context.Context, userData models.Shortuser, dataReq models.DocumentUserSendSigning, userTarget int) (res *helpers.JSONResponse, err error)
 	SaveDraftMultiple(ctx context.Context, userData models.Shortuser, dataReq models.DocumentUserMultiple) (res *helpers.JSONResponse, err error)
 }
 
@@ -358,7 +358,7 @@ func (s *DocumentService) SaveDraft(ctx context.Context, userData models.Shortus
 }
 
 //SendSign save draft single document
-func (s *DocumentService) SendSign(ctx context.Context, userData models.Shortuser, dataReq models.DocumentUser, userTarget int) (res *helpers.JSONResponse, err error) {
+func (s *DocumentService) SendSign(ctx context.Context, userData models.Shortuser, dataReq models.DocumentUserSendSigning, userTarget int) (res *helpers.JSONResponse, err error) {
 
 	var affect int64
 
@@ -415,12 +415,30 @@ func (s *DocumentService) SendSign(ctx context.Context, userData models.Shortuse
 		}
 	}
 
-	dataReq.UserID = userTarget
-	dataReq.Signing = 1
-	dataReq.Status = 1
-	dataReq.CreatedAt = TimeNow.Format("2006-01-02 15:04:05")
+	var docUser models.DocumentUser
 
-	idStore, err := s.DocumentUserRepository.StoreDocumentUser(ctx, tx, dataReq)
+	docUser.ID = dataReq.ID
+	docUser.DocumentID = dataReq.DocumentID
+	docUser.UserID = dataReq.UserID
+	docUser.Starred = dataReq.Starred
+	docUser.Shared = dataReq.Shared
+	docUser.Signing = dataReq.Signing
+	docUser.Labels = dataReq.Labels
+	docUser.CreatedAt = dataReq.CreatedAt
+	docUser.UpdatedAt = dataReq.UpdatedAt
+	docUser.Tampilan = dataReq.Tampilan
+	docUser.Page = dataReq.Page
+	docUser.Image = dataReq.Image
+	docUser.XAxis = dataReq.XAxis
+	docUser.YAxis = dataReq.YAxis
+	docUser.Width = dataReq.Width
+	docUser.Height = dataReq.Height
+	docUser.UserID = userTarget
+	docUser.Signing = 1
+	docUser.Status = 1
+	docUser.CreatedAt = TimeNow.Format("2006-01-02 15:04:05")
+
+	idStore, err := s.DocumentUserRepository.StoreDocumentUser(ctx, tx, docUser)
 	if err != nil || idStore == 0 {
 		logrus.WithFields(logrus.Fields{
 			"code":  5500,

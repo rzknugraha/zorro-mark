@@ -66,7 +66,7 @@ type Shortuser struct {
 //ListUser for Shortuser paylioad
 type ListUser struct {
 	ID          int         `db:"id" json:"id"`
-	Nip         string      `json:"nip"`
+	Nip         null.String `json:"nip"`
 	Nama        string      `db:"nama" json:"name"`
 	IdentityNO  null.String `db:"identity_no" json:"identity_no"`
 	NamaJabatan string      `db:"nama_jabatan" json:"nama_jabatan"`
