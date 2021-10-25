@@ -26,6 +26,7 @@ type IDocumentService interface {
 	SaveDraft(ctx context.Context, userData models.Shortuser, dataReq models.DocumentUser) (res *helpers.JSONResponse, err error)
 	SendSign(ctx context.Context, userData models.Shortuser, dataReq models.DocumentUserSendSigning, userTarget int) (res *helpers.JSONResponse, err error)
 	SaveDraftMultiple(ctx context.Context, userData models.Shortuser, dataReq models.DocumentUserMultiple) (res *helpers.JSONResponse, err error)
+	CountDocByUser(ctx context.Context, userData models.Shortuser) (res *helpers.JSONResponse, err error)
 }
 
 // DocumentService is
@@ -33,6 +34,7 @@ type DocumentService struct {
 	DocumentRepository         repositories.IDocumentsRepository
 	DocumentUserRepository     repositories.IDocumentUserRepository
 	DocumentActivityRepository repositories.IDocumentActivityRepository
+	CommentRepository          repositories.ICommentRepository
 	DB                         infrastructures.ISQLConnection
 }
 
@@ -47,10 +49,14 @@ func InitDocumentService() *DocumentService {
 	documentActivityRepositories := new(repositories.DocumentActivityRepository)
 	documentActivityRepositories.DB = &infrastructures.SQLConnection{}
 
+	commentRepositories := new(repositories.CommentRepository)
+	commentRepositories.DB = &infrastructures.SQLConnection{}
+
 	DocumentService := new(DocumentService)
 	DocumentService.DocumentRepository = documentRepositories
 	DocumentService.DocumentUserRepository = documentUserRepositories
 	DocumentService.DocumentActivityRepository = documentActivityRepositories
+	DocumentService.CommentRepository = commentRepositories
 
 	return DocumentService
 }
@@ -447,6 +453,14 @@ func (s *DocumentService) SendSign(ctx context.Context, userData models.Shortuse
 		}).Error("[Service SendSign] error store doc user")
 		return
 	}
+	comment := models.Comment{
+		IDDocument: dataReq.DocumentID,
+		IDUser:     dataReq.UserID,
+		NameUser:   userData.Name,
+		Comment:    dataReq.Comment.String,
+	}
+	//store comment
+	_, err = s.CommentRepository.StoreComment(ctx, tx, comment)
 
 	tx.Commit()
 
@@ -562,4 +576,27 @@ func (s *DocumentService) SaveDraftMultiple(ctx context.Context, userData models
 	}
 	return
 
+}
+
+//CountDocByUser update document only attribute
+func (s *DocumentService) CountDocByUser(ctx context.Context, userData models.Shortuser) (res *helpers.JSONResponse, err error) {
+
+	data, err := s.DocumentUserRepository.CountDocByUser(ctx, userData.ID)
+
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": err,
+			"data":  userData,
+		}).Error("[Service CountDocByUser] error get count user")
+		return
+	}
+
+	res = &helpers.JSONResponse{
+		Code:    2200,
+		Message: "success",
+		Data:    data,
+	}
+
+	return
 }

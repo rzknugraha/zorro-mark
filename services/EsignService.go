@@ -76,7 +76,9 @@ func (s *EsignService) PostSign(ctx context.Context, dataSign models.EsignReq, d
 		return nil, err1
 	}
 	defer tx.RollbackUnlessCommitted()
-
+	if dataSign.Tampilan == "" {
+		dataSign.Tampilan = "invisible"
+	}
 	res, err := s.EsignRepository.PostEsign(ctx, dataSign)
 	if err != nil {
 
