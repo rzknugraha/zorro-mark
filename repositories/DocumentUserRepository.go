@@ -21,6 +21,7 @@ type IDocumentUserRepository interface {
 	GetDocByUser(ctx context.Context, conditon map[string]interface{}, paging helpers.PageReq, sorting string) (dataDocs []models.DocumentUserJoinDoc, total int, err error)
 	UpdateDocUsers(ctx context.Context, db *dbr.Tx, Condition map[string]interface{}, Payload map[string]interface{}) (affect int64, err error)
 	GetSingleDocByUser(ctx context.Context, userID int, documentID int) (dataDoc models.DocumentUserJoinDoc, err error)
+	CountDocByUser(ctx context.Context, userID int) (count models.CountDocUser, err error)
 }
 
 // DocumentUserRepository is
@@ -207,6 +208,29 @@ func (r *DocumentUserRepository) GetSingleDocByUser(ctx context.Context, userID 
 		}
 		return
 
+	}
+
+	return
+}
+
+//CountDocByUser get document spesific user
+func (r *DocumentUserRepository) CountDocByUser(ctx context.Context, userID int) (count models.CountDocUser, err error) {
+
+	db := r.DB.EsignRead()
+
+	query := fmt.Sprintf("select user_id, sum(signing) as signing ,count(status) as upload,sum(shared) as shared , sum(labels) as draft,sum(starred) as starred from document_user where user_id = %d and status  >= 1  GROUP BY user_id;", userID)
+
+	q := db.SelectBySql(query)
+
+	_, err = q.LoadContext(ctx, &count)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": err,
+			"data":  userID,
+		}).Error("[REPO CountDocByUser] error get doc from DB")
+
+		return
 	}
 
 	return

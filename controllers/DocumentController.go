@@ -481,3 +481,39 @@ func (c *DocumentController) SaveDraftMultiple(res http.ResponseWriter, req *htt
 
 	return
 }
+
+//CountDocByUser count by user
+func (c *DocumentController) CountDocByUser(res http.ResponseWriter, req *http.Request) {
+
+	UserInfo, _ := gorillaContext.Get(req, "UserInfo").(jwt.MapClaims)
+
+	IDUser := fmt.Sprintf("%v", UserInfo["id"])
+	Name := fmt.Sprintf("%v", UserInfo["name"])
+	NIP := fmt.Sprintf("%v", UserInfo["nip"])
+
+	intIDUser, err := strconv.Atoi(IDUser)
+	if err != nil {
+		return
+	}
+
+	userData := models.Shortuser{
+		Name: Name,
+		Nip:  NIP,
+		ID:   intIDUser,
+	}
+
+	result, err := c.DocumentService.CountDocByUser(req.Context(), userData)
+	if err != nil {
+		responseErr := &helpers.JSONResponse{
+			Code:    5500,
+			Message: "Error Internal",
+			Data:    nil,
+		}
+
+		helpers.DirectResponse(res, http.StatusInternalServerError, responseErr)
+		return
+	}
+
+	helpers.DirectResponse(res, http.StatusOK, result)
+	return
+}

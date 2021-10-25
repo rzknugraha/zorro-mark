@@ -26,6 +26,7 @@ type IDocumentService interface {
 	SaveDraft(ctx context.Context, userData models.Shortuser, dataReq models.DocumentUser) (res *helpers.JSONResponse, err error)
 	SendSign(ctx context.Context, userData models.Shortuser, dataReq models.DocumentUserSendSigning, userTarget int) (res *helpers.JSONResponse, err error)
 	SaveDraftMultiple(ctx context.Context, userData models.Shortuser, dataReq models.DocumentUserMultiple) (res *helpers.JSONResponse, err error)
+	CountDocByUser(ctx context.Context, userData models.Shortuser) (res *helpers.JSONResponse, err error)
 }
 
 // DocumentService is
@@ -575,4 +576,27 @@ func (s *DocumentService) SaveDraftMultiple(ctx context.Context, userData models
 	}
 	return
 
+}
+
+//CountDocByUser update document only attribute
+func (s *DocumentService) CountDocByUser(ctx context.Context, userData models.Shortuser) (res *helpers.JSONResponse, err error) {
+
+	data, err := s.DocumentUserRepository.CountDocByUser(ctx, userData.ID)
+
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": err,
+			"data":  userData,
+		}).Error("[Service CountDocByUser] error get count user")
+		return
+	}
+
+	res = &helpers.JSONResponse{
+		Code:    2200,
+		Message: "success",
+		Data:    data,
+	}
+
+	return
 }

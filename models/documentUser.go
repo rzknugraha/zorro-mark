@@ -108,3 +108,14 @@ type DocumentUserSendSigning struct {
 	Tampilan   null.String `db:"tampilan" json:"tampilan"`
 	Comment    null.String `db:"comment" json:"comment"`
 }
+
+//CountDocUser count doc user have
+type CountDocUser struct {
+	UserID  int `db:"user_id" json:"user_id"`
+	Starred int `db:"starred" json:"starred"`
+	Shared  int `db:"shared" json:"shared"`
+	Signing int `db:"signing" json:"signing"`
+	Draft   int `db:"draft" json:"draft"`
+	Signed  int `db:"signed" json:"signed"`
+	Upload  int `db:"upload" json:"upload"`
+}
