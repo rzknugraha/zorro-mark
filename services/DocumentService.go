@@ -33,6 +33,7 @@ type DocumentService struct {
 	DocumentRepository         repositories.IDocumentsRepository
 	DocumentUserRepository     repositories.IDocumentUserRepository
 	DocumentActivityRepository repositories.IDocumentActivityRepository
+	CommentRepository          repositories.ICommentRepository
 	DB                         infrastructures.ISQLConnection
 }
 
@@ -47,10 +48,14 @@ func InitDocumentService() *DocumentService {
 	documentActivityRepositories := new(repositories.DocumentActivityRepository)
 	documentActivityRepositories.DB = &infrastructures.SQLConnection{}
 
+	commentRepositories := new(repositories.CommentRepository)
+	commentRepositories.DB = &infrastructures.SQLConnection{}
+
 	DocumentService := new(DocumentService)
 	DocumentService.DocumentRepository = documentRepositories
 	DocumentService.DocumentUserRepository = documentUserRepositories
 	DocumentService.DocumentActivityRepository = documentActivityRepositories
+	DocumentService.CommentRepository = commentRepositories
 
 	return DocumentService
 }
@@ -447,6 +452,14 @@ func (s *DocumentService) SendSign(ctx context.Context, userData models.Shortuse
 		}).Error("[Service SendSign] error store doc user")
 		return
 	}
+	comment := models.Comment{
+		IDDocument: dataReq.DocumentID,
+		IDUser:     dataReq.UserID,
+		NameUser:   userData.Name,
+		Comment:    dataReq.Comment.String,
+	}
+	//store comment
+	_, err = s.CommentRepository.StoreComment(ctx, tx, comment)
 
 	tx.Commit()
 
