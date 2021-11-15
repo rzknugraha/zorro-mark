@@ -50,7 +50,9 @@ func (r *DocumentUserRepository) StoreDocumentUser(ctx context.Context, db *dbr.
 			"height",
 			"page",
 			"image",
-			"tampilan").
+			"tampilan",
+			"source_user_id",
+			"source_username").
 		Record(&doc).ExecContext(ctx)
 
 	if err != nil {
@@ -94,6 +96,8 @@ func (r *DocumentUserRepository) GetDocByUser(ctx context.Context, conditon map[
 		"document_user.status",
 		"documents.file_name",
 		"documents.path",
+		"document_user.source_user_id",
+		"document_user.source_username",
 	).
 		From("document_user").
 		LeftJoin("documents", "document_user.document_id = documents.id")
@@ -191,6 +195,8 @@ func (r *DocumentUserRepository) GetSingleDocByUser(ctx context.Context, userID 
 		"document_user.page",
 		"document_user.image",
 		"document_user.tampilan",
+		"document_user.source_user_id",
+		"document_user.source_username",
 	).
 		From("document_user").
 		LeftJoin("documents", "document_user.document_id = documents.id").

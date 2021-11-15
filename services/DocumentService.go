@@ -15,6 +15,7 @@ import (
 	"github.com/rzknugraha/zorro-mark/models"
 	"github.com/rzknugraha/zorro-mark/repositories"
 	"github.com/sirupsen/logrus"
+	"gopkg.in/guregu/null.v3"
 )
 
 // IDocumentService is
@@ -27,6 +28,7 @@ type IDocumentService interface {
 	SendSign(ctx context.Context, userData models.Shortuser, dataReq models.DocumentUserSendSigning, userTarget int) (res *helpers.JSONResponse, err error)
 	SaveDraftMultiple(ctx context.Context, userData models.Shortuser, dataReq models.DocumentUserMultiple) (res *helpers.JSONResponse, err error)
 	CountDocByUser(ctx context.Context, userData models.Shortuser) (res *helpers.JSONResponse, err error)
+	SendSignMultiple(ctx context.Context, userData models.Shortuser, dataReq models.DocumentUserSendSigningMultiple) (res *helpers.JSONResponse, err error)
 }
 
 // DocumentService is
@@ -425,7 +427,6 @@ func (s *DocumentService) SendSign(ctx context.Context, userData models.Shortuse
 
 	docUser.ID = dataReq.ID
 	docUser.DocumentID = dataReq.DocumentID
-	docUser.UserID = dataReq.UserID
 	docUser.Starred = dataReq.Starred
 	docUser.Shared = dataReq.Shared
 	docUser.Signing = dataReq.Signing
@@ -443,6 +444,8 @@ func (s *DocumentService) SendSign(ctx context.Context, userData models.Shortuse
 	docUser.Signing = 1
 	docUser.Status = 1
 	docUser.CreatedAt = TimeNow.Format("2006-01-02 15:04:05")
+	docUser.SourceUserID = null.IntFrom(int64(userData.ID))
+	docUser.SourceUsername = null.StringFrom(userData.Name)
 
 	idStore, err := s.DocumentUserRepository.StoreDocumentUser(ctx, tx, docUser)
 	if err != nil || idStore == 0 {
@@ -599,4 +602,114 @@ func (s *DocumentService) CountDocByUser(ctx context.Context, userData models.Sh
 	}
 
 	return
+}
+
+//SendSignMultiple send sign multiple document
+func (s *DocumentService) SendSignMultiple(ctx context.Context, userData models.Shortuser, dataReq models.DocumentUserSendSigningMultiple) (res *helpers.JSONResponse, err error) {
+
+	documentIDs := strings.Split(dataReq.DocumentID, ",")
+
+	docSign := models.DocumentUserSendSigning{
+		Tampilan: dataReq.Tampilan,
+		Page:     dataReq.Page,
+		Image:    dataReq.Image,
+		XAxis:    dataReq.XAxis,
+		YAxis:    dataReq.YAxis,
+		Width:    dataReq.Width,
+		Height:   dataReq.Height,
+		Comment:  dataReq.Comment,
+	}
+
+	fatalErrors := make(chan error)
+	wgDone := make(chan bool)
+
+	newctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	var wg sync.WaitGroup
+
+	for _, documentID := range documentIDs {
+		wg.Add(1)
+		go func(documentIDInside string) {
+			defer wg.Done()
+
+			select {
+			case <-newctx.Done():
+				return // Error somewhere, terminate
+			default: // Default is must to avoid blocking
+			}
+			intdocumentID, err := strconv.Atoi(documentIDInside)
+			if err != nil {
+				logrus.WithFields(logrus.Fields{
+					"code":  5500,
+					"error": err,
+					"data":  documentIDInside,
+				}).Error("[Service SendSignMultiple] error convert to int documentID")
+				fatalErrors <- err
+				cancel()
+				return
+			}
+
+			docSign.DocumentID = intdocumentID
+
+			result, err := s.SendSign(ctx, userData, docSign, dataReq.TargetID)
+			if err != nil {
+				logrus.WithFields(logrus.Fields{
+					"code":  5500,
+					"error": err,
+					"data":  documentIDInside,
+				}).Error("[Service SendSignMultiple] error send sign")
+				fatalErrors <- err
+				return
+			}
+
+			if result == nil {
+				err1 := errors.New("not 2200")
+				logrus.WithFields(logrus.Fields{
+					"code":  5500,
+					"error": err1,
+					"data":  result,
+				}).Error("[Service SendSignMultiple] error not 2200")
+				fatalErrors <- err1
+				cancel()
+				return
+
+			}
+
+		}(documentID)
+	}
+
+	go func() {
+		wg.Wait()
+		close(wgDone)
+	}()
+
+	select {
+	case <-wgDone:
+		// carry on
+		break
+	case err := <-fatalErrors:
+		// close(fatalErrors)
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"error": err,
+			"data":  docSign,
+		}).Error("[Service SendSignMultiple] error when save multiple draft")
+		response := &helpers.JSONResponse{
+			Code:    5500,
+			Message: err.Error(),
+			Data:    nil,
+		}
+
+		return response, err
+	}
+
+	fmt.Println("ga masuk error")
+	res = &helpers.JSONResponse{
+		Code:    2200,
+		Message: "success",
+		Data:    nil,
+	}
+	return
+
 }
