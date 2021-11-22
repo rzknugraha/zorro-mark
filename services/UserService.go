@@ -30,12 +30,14 @@ type IUserService interface {
 	Profile(ctx context.Context, NIP string) (Response *helpers.JSONResponse, err error)
 	UpdateFile(ctx context.Context, file multipart.File, oldName string, IDUser int, fileTypeReq string) (Response *helpers.JSONResponse, err error)
 	GetAll(ctx context.Context) (Response *helpers.JSONResponse, err error)
+	LoginMehong(ctx context.Context, c models.EncryptedCookies) (Response *helpers.JSONResponse, err error)
 }
 
 // UserService is
 type UserService struct {
-	UserRepository repositories.IUserRepository
-	Redis          infrastructures.IRedis
+	UserRepository   repositories.IUserRepository
+	SniperRepository repositories.ISniperRepository
+	Redis            infrastructures.IRedis
 }
 
 // InitUserService init
@@ -44,8 +46,12 @@ func InitUserService() *UserService {
 	NewUserRepository.DB = &infrastructures.SQLConnection{}
 	NewUserRepository.Redis = &infrastructures.Redis{}
 
+	NewSniperRepository := new(repositories.SniperRepository)
+	NewSniperRepository.Redis = &infrastructures.Redis{}
+
 	UserService := new(UserService)
 	UserService.UserRepository = NewUserRepository
+	UserService.SniperRepository = NewSniperRepository
 	UserService.Redis = &infrastructures.Redis{}
 
 	return UserService
@@ -256,4 +262,32 @@ func (p *UserService) GetAll(ctx context.Context) (Response *helpers.JSONRespons
 		Message: "Success",
 		Data:    users,
 	}, nil
+}
+
+//LoginMehong login usinh sniper
+func (p *UserService) LoginMehong(ctx context.Context, c models.EncryptedCookies) (Response *helpers.JSONResponse, err error) {
+
+	dataLogin, err := p.UserRepository.LoginMehongUser(ctx, c)
+	if err != nil {
+
+		return nil, err
+	}
+
+	l := models.Login{
+		Nip:      dataLogin.NIP,
+		Password: viper.GetString("sniper.key"),
+	}
+
+	token, err := p.Login(l)
+	if err != nil {
+
+		return nil, err
+	}
+
+	return &helpers.JSONResponse{
+		Code:    2200,
+		Message: "Success",
+		Data:    token,
+	}, nil
+
 }

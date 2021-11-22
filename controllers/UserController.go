@@ -1,9 +1,6 @@
 package controllers
 
 import (
-	"crypto/aes"
-	"crypto/cipher"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -310,8 +307,8 @@ func (c *UserController) GetAll(res http.ResponseWriter, req *http.Request) {
 	return
 }
 
-//UserEncrypted get all users
-func (c *UserController) UserEncrypted(res http.ResponseWriter, req *http.Request) {
+//LoginMehong get all users
+func (c *UserController) LoginMehong(res http.ResponseWriter, req *http.Request) {
 
 	var co models.EncryptedCookies
 	//Read request data
@@ -323,40 +320,21 @@ func (c *UserController) UserEncrypted(res http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	key3 := "in1,k0nci g3rbang kenikm4tan! *5"
-	fmt.Println("co.Cookies2")
-	fmt.Println(co.Cookies2)
-	decodeKey1, err := base64.StdEncoding.DecodeString(co.Cookies1)
-	decodeKey2, err := base64.StdEncoding.DecodeString(co.Cookies2)
-
-	key := []byte(key3)
-	ciphertext := decodeKey2
-
-	block, err := aes.NewCipher(key)
+	resp, err := c.UserService.LoginMehong(req.Context(), co)
 	if err != nil {
-		fmt.Println(err)
-		helpers.DirectResponse(res, http.StatusBadRequest, err)
-		return
+		logrus.WithFields(logrus.Fields{
+			"code":  5500,
+			"event": "login-mehomg",
+			"error": err,
+		}).Info(fmt.Sprintf("failed-login-mehomg"))
+
+		helpers.Response(res, http.StatusInternalServerError, &helpers.JSONResponse{
+			Code:    5500,
+			Message: "Internal server error",
+			Error:   err.Error(),
+		})
 	}
 
-	fmt.Println("ciphertext")
-	fmt.Println(string(ciphertext))
-	fmt.Println("aes.BlockSize")
-	fmt.Println(aes.BlockSize)
-
-	// The IV needs to be unique, but not secure. Therefore it's common to
-	// include it at the beginning of the ciphertext.
-	if len(ciphertext) < aes.BlockSize {
-		panic("ciphertext too short")
-	}
-	iv := decodeKey1
-	ciphertext = ciphertext[aes.BlockSize:]
-
-	stream := cipher.NewCFBDecrypter(block, iv)
-
-	// XORKeyStream can work in-place if the two arguments are the same.
-	stream.XORKeyStream(ciphertext, ciphertext)
-	fmt.Printf("%s", ciphertext)
-
+	helpers.DirectResponse(res, http.StatusOK, resp)
 	return
 }
