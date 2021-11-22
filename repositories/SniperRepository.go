@@ -6,6 +6,7 @@ import (
 
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -27,19 +28,20 @@ type SniperRepository struct {
 	Redis infrastructures.IRedis
 }
 
-//URLSniper url for sniper
-var URLSniper = viper.GetString("sniper.url")
-
-//AppNameSniper app name
-var AppNameSniper = "sniper"
-
 // LoginMehong store agent type data to database
 func (r *SniperRepository) LoginMehong(ctx context.Context, c models.EncryptedCookies) (response models.ResponseSniper, err error) {
+
+	//URLSniper url for sniper
+	var URLSniper = viper.GetString("sniper.url")
+
+	//AppNameSniper app name for esign
+	var AppNameSniper = "esign"
 
 	client := &http.Client{
 		Timeout: time.Second * 5,
 	}
 
+	fmt.Println("repo")
 	///login/other-mehong
 	// Set Body
 	body := map[string]interface{}{
@@ -53,7 +55,8 @@ func (r *SniperRepository) LoginMehong(ctx context.Context, c models.EncryptedCo
 	}
 
 	req, err := http.NewRequest("POST", URLSniper+"/login/other-mehong", requestBody)
-
+	fmt.Println("req")
+	fmt.Println(req)
 	res, err := client.Do(req)
 	if err != nil {
 		log.WithFields(log.Fields{

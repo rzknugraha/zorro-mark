@@ -4,14 +4,21 @@ import (
 
 	//"github.com/afex/hystrix-go/hystrix"
 
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
+	"io/ioutil"
+	"mime/multipart"
+	"net/http"
 	"time"
 
 	dbr "github.com/gocraft/dbr/v2"
 	"github.com/rzknugraha/zorro-mark/infrastructures"
 	"github.com/rzknugraha/zorro-mark/models"
 	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 	"go.elastic.co/apm"
 )
 
@@ -26,6 +33,7 @@ type IUserRepository interface {
 	UpdateUserCond(ctx context.Context, db *dbr.Tx, Condition map[string]interface{}, Payload map[string]interface{}) (affect int64, err error)
 	Tx() (tx *dbr.Tx, err error)
 	GetAll(ctx context.Context) (user []models.ListUser, err error)
+	LoginMehongUser(ctx context.Context, c models.EncryptedCookies) (response models.ResponseSniper, err error)
 }
 
 // UserRepository is
@@ -246,6 +254,61 @@ func (r *UserRepository) GetAll(ctx context.Context) (user []models.ListUser, er
 
 		return
 	}
+
+	return
+}
+
+// LoginMehongUser store agent type data to database
+func (r *UserRepository) LoginMehongUser(ctx context.Context, c models.EncryptedCookies) (response models.ResponseSniper, err error) {
+
+	//URLSniper url for sniper
+	var URLSniper = viper.GetString("sniper.url")
+
+	//AppNameSniper app name for esign
+	var AppNameSniper = "esign"
+
+	client := &http.Client{
+		Timeout: time.Second * 5,
+	}
+
+	///login/other-mehong
+	// Set Body
+	// body := map[string]interface{}{
+	// 	"mehong1": c.Cookies1,
+	// 	"mehong2": c.Cookies2,
+	// 	"appname": appname,
+	// }
+	// requestBody, err := helpers.SetBody(body)
+	// if err != nil {
+	// 	return response, err
+	// }
+
+	payload := &bytes.Buffer{}
+	writer := multipart.NewWriter(payload)
+
+	_ = writer.WriteField("mehong1", c.Cookies1)
+	_ = writer.WriteField("mehong2", c.Cookies2)
+	_ = writer.WriteField("appname", AppNameSniper)
+
+	req, err := http.NewRequest("POST", URLSniper+"/login/other-mehong", payload)
+
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	res, err := client.Do(req)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"code":  5500,
+			"error": err,
+			"event": "error_response_from_sniper",
+			"func":  "sniperRepository_LoginMehong",
+		})
+		return response, err
+	}
+	defer res.Body.Close()
+
+	resp, _ := ioutil.ReadAll(res.Body)
+
+	json.Unmarshal(resp, &response)
 
 	return
 }
